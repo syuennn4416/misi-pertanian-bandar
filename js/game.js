@@ -125,6 +125,19 @@ function book(){
  $('#replay').onclick=()=>{$('#modal').close();review=true;go('lab')};
 }
 function missionMenu(){modal('<h2>Pilih Misi / Main Semula</h2><p>Main semula mengekalkan lencana dan sejarah jawapan.</p><div id="missionButtons"></div><p>Lencana menunjukkan penyelesaian aktiviti, bukan Tahap Penguasaan.</p>');[['Misi 1 · Misteri Pertanian Bandar','map'],['Misi 2 · Rahsia Sistem Takungan','lab'],['Misi 3 · Makmal Tani Pintar','workshop'],['Misi 4 · Operasi Selamatkan Tanaman','gate4'],['Misi Akhir · Wira Pertanian Bandar','final0']].forEach(([label,target],i)=>{const b=btn(label,()=>{$('#modal').close();review=false;phase3.replay(target)},'#missionButtons');b.disabled=i>0&&!state.badges.includes(i)&&state.mode!=='kelas'})}
+function deviceCheck(){
+ const secure=window.isSecureContext,hasCamera=!!navigator.mediaDevices?.getUserMedia,voice=!!window.speechSynthesis;
+ const w=window.innerWidth,h=window.innerHeight;
+ modal('<h2>Semakan Peranti</h2><p>Semak kesediaan pelayar sebelum permainan. Gambar dan video tidak dihantar ke pelayan.</p><div class="device-results"><p><strong>Paparan:</strong> '+w+' × '+h+'. Kanvas permainan ialah 16:9; pada telefon menegak, aktiviti dipaparkan di bawah.</p><p><strong>HTTPS / localhost:</strong> '+(secure?'Ya':'Tidak — kamera memerlukan HTTPS atau localhost')+'</p><p><strong>API kamera:</strong> '+(hasCamera?'Tersedia':'Tidak tersedia')+'</p><p><strong>Pembaca suara:</strong> '+(voice?sound.availableVoices().length+' suara ditemui':'Tidak disokong')+'</p><p><strong>Internet:</strong> '+(navigator.onLine?'Disambung menurut pelayar':'Tiada sambungan; model tangan memerlukan internet')+'</p></div><button id="checkCameraPermission" type="button">Uji Kamera (Meminta Izin)</button><p id="cameraCheckResult" role="status">Kamera hanya diakses apabila butang ujian ditekan.</p><button id="backToSettings" type="button">Kembali ke Tetapan</button>');
+ $('#backToSettings').onclick=settings;
+ $('#checkCameraPermission').disabled=!secure||!hasCamera;
+ $('#checkCameraPermission').onclick=async()=>{
+  const status=$('#cameraCheckResult');status.textContent='Meminta izin kamera…';let stream;
+  try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user'},audio:false});if(status.isConnected)status.textContent='Kamera berfungsi. Aliran ujian sudah dihentikan. Uji cubitan sebenar dalam Misi 3.'}
+  catch(e){if(status.isConnected)status.textContent='Tidak dapat membuka kamera: '+(e?.name||'ralat')+'. Gunakan tetikus atau sentuhan.'}
+  finally{stream?.getTracks().forEach(track=>track.stop())}
+ };
+}
 function refreshVoiceOptions(){
  const list=$('#voiceId'),language=$('#voiceLanguage');
  if(!list||!language)return;
@@ -157,7 +170,7 @@ function settings(){
  <p>Jika tiada suara dipilih tersedia, permainan tidak menukar kepada suara lain secara senyap. Sari kata sentiasa boleh dibaca.</p>
  <p>Mod Kelas membolehkan guru terus memilih lima misi yang tersedia. Gunakan respons individu untuk PBD.</p>
  <p>Cadangan 60 minit: induksi 5 · Misi 1: 8 · Misi 2: 14 · Misi 3: 10 · Misi 4: 8 · akhir: 10 · penutup: 5.</p>
- <p>${storageOK?'Simpanan pelayar tersedia.':'Simpanan pelayar tidak tersedia; eksport rekod sebelum keluar.'}</p>`);
+ <p>${storageOK?'Simpanan pelayar tersedia.':'Simpanan pelayar tidak tersedia; eksport rekod sebelum keluar.'}</p><button type="button" id="deviceCheck">Periksa Peranti & Kamera</button>`);
  const langSelect=$('#voiceLanguage');
  if(![...langSelect.options].some(x=>x.value===state.voiceLanguage)){
   const o=document.createElement('option');o.value=state.voiceLanguage;o.textContent=labels[state.voiceLanguage]||state.voiceLanguage;langSelect.append(o)
@@ -170,6 +183,7 @@ function settings(){
  $('#refreshVoices').onclick=()=>{window.speechSynthesis?.getVoices?.();refreshVoiceOptions()};
  $('#voicePitch').oninput=e=>{state.voicePitch=Number(e.target.value);$('#voicePitchLabel').textContent=state.voicePitch.toFixed(2)+'×';save()};
  $('#testVoice').onclick=()=>sound.speak('Hai, saya Alya! Selamat datang ke Misi Pertanian Bandar. Mari kita belajar bersama-sama.','',true);
+ $('#deviceCheck').onclick=deviceCheck;
  $('#mode').value=state.mode;
  $('#mode').onchange=e=>{save();state=profiles[e.target.value];review=false;stopVoice();sound.sync();save();$('#modal').close();go('home')};
  $('#mute').onchange=e=>{state.muted=e.target.checked;if(state.muted)stopVoice();sound.sync();save()};
