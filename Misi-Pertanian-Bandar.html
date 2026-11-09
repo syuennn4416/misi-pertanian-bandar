@@ -993,7 +993,7 @@ function book(){
    const data=JSON.parse(await file.text());
    if(!data||typeof data!=='object'||Array.isArray(data))throw Error('Format sandaran tidak sah.');
    let next;
-   if(data.product==='misi-pertanian-bandar'&&data.format===1&&data.profiles&&typeof data.profiles==='object'){
+   if(data.product==='misi-pertanian-bandar'&&data.format===1&&data.profiles&&typeof data.profiles==='object'&&['kendiri','kelas'].every(m=>data.profiles[m]&&Array.isArray(data.profiles[m].badges)&&Array.isArray(data.profiles[m].answers))){
     next={kendiri:normalizeProgress(data.profiles.kendiri,'kendiri'),kelas:normalizeProgress(data.profiles.kelas,'kelas')};
    }else if(['kendiri','kelas'].includes(data.mode)&&Array.isArray(data.answers)&&Array.isArray(data.badges)){
     next={...profiles,[data.mode]:normalizeProgress(data,data.mode)};
@@ -1085,7 +1085,7 @@ window.speechSynthesis?.addEventListener?.('voiceschanged',()=>{if($('#voiceLang
 $('#dialogToggle').onclick=()=>{const b=$('#dialogToggle'),panel=$('#dialogueTranscript'),open=panel.hidden;panel.hidden=!open;b.setAttribute('aria-expanded',String(open));b.textContent=open?'Tutup dialog':'Lihat lagi';b.title=open?'Tutup dialog penuh':'Baca dialog penuh Alya di ruang aktiviti';if(open)panel.scrollIntoView({block:'nearest',behavior:'smooth'})};
 $('#transcriptClose').onclick=collapseDialogue;
 $('#transcriptListen').onclick=speak;
-$('#transcriptPause').onclick=()=>{const button=$('#transcriptPause');if(sound.isVoicePaused()){sound.resumeVoice();button.textContent='Jeda Suara'}else{sound.pauseVoice();button.textContent='Sambung Suara'}};
+$('#transcriptPause').onclick=()=>{const button=$('#transcriptPause');if(sound.isVoicePaused())sound.resumeVoice();else sound.pauseVoice();button.textContent=sound.isVoicePaused()?'Sambung Suara':'Jeda Suara'};
 $('#home').onclick=()=>go('home');$('#book').onclick=book;$('#settings').onclick=settings;$('#close').onclick=()=>$('#modal').close();$('#listen').onclick=speak;
 function frame(t){const delta=Math.min((t-last)/1000,.1);last=t;if(!paused)simTime+=delta;if(phase3.draw(scene,simTime,$('#world'),art)){}else if(scene==='sim2')drawScience($('#world'),'aqua',simTime);else if(scene==='sim3'||scene==='flow')drawScience($('#world'),'self',simTime);else if(scene==='workshop')drawScience($('#world'),'self',0,state.assembly,true);else art.draw(scene,scene.startsWith('sim')?simTime:t/1000);if(/^sim[0-3]$/.test(scene)){
  const sys=Number(scene.at(-1));drawFlowOverlay($('#world'),sys,simTime);
