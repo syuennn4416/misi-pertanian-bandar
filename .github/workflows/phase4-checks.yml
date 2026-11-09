@@ -1,0 +1,48 @@
+name: Phase 4 Build and Browser Regression
+on:
+  push:
+    branches:
+      - feature/phase4-chatgpt-safety-classroom
+  pull_request:
+  workflow_dispatch:
+jobs:
+  bundle:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build the complete offline HTML
+        run: python3 scripts/bundle.py
+      - name: Check integrated HTML preserves essential features
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path('Misi-Pertanian-Bandar.html').read_text()
+          must=['learningStages','scienceGuide','Rubrik PBD','Buku Misi Pertanian','function alya(','id="gameShell"','id="cameraPanel"','id="voiceLanguage"','Wira Pertanian Bandar']
+          assert all(v in s for v in must), [v for v in must if v not in s]
+          print('PASS: complete integrated five-mission HTML')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Misi-Pertanian-Bandar-Phase4-Complete
+          path: Misi-Pertanian-Bandar.html
+          retention-days: 7
+  regression:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install browser runner
+        run: |
+          npm install --no-save playwright@1.57.0
+          npx playwright install --with-deps chromium
+      - name: Rebuild standalone HTML
+        run: python3 scripts/bundle.py
+      - name: Run server and all automated tests
+        run: |
+          python3 -m http.server 8080 --bind 127.0.0.1 &
+          SERVER_PID=$!
+          trap 'kill $SERVER_PID || true' EXIT
+          sleep 2
+          CHROMIUM_PATH="${CHROMIUM_PATH:-$(find ~/.cache/ms-playwright -path '*/chrome-linux64/chrome' -type f | head -1)}" npm test
