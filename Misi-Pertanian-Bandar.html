@@ -59,6 +59,18 @@ header{max-width:1400px}
  #dialogue{grid-template-columns:115px minmax(0,1fr);min-height:165px}
  #portrait{width:115px;height:138px}
 }
+
+/* Phase 4 Category C: readable live captions and stronger badge/stamp celebration. */
+#speech{white-space:pre-wrap;overflow-wrap:anywhere}
+#dialogue.speaking .dialogue-box{box-shadow:0 0 0 3px #29323c,inset 0 0 0 3px #397096,0 0 0 5px #f0c46c55}
+#dialogue.speaking .nameplate::after{content:' ◖)))';color:#397052;font-size:13px;vertical-align:middle}
+#voiceStatus{display:inline-block;max-width:100%;overflow-wrap:anywhere}
+.celebrate .badge{filter:drop-shadow(0 4px 2px #af732a60);animation:badge-reveal .8s cubic-bezier(.15,1.55,.37,1) both}
+.celebrate .final-stamp{display:inline-block;max-width:90%;padding:6px 22px;border:6px double #b3312f;border-radius:5px;color:#b3312f;background:#fff4e0;font-size:clamp(24px,5vw,42px);letter-spacing:.08em;box-shadow:3px 4px #74352c20;transform-origin:center;animation:stamp-hit .38s .95s cubic-bezier(.1,.8,.4,1.25) both}
+@keyframes badge-reveal{0%{transform:scale(.2) rotate(-18deg);opacity:0}75%{transform:scale(1.13) rotate(6deg);opacity:1}100%{transform:scale(1) rotate(0)}}
+@keyframes stamp-hit{0%{transform:scale(2.1) rotate(-16deg);opacity:0;filter:blur(3px)}65%{transform:scale(.89) rotate(-8deg);opacity:1;filter:blur(0)}100%{transform:scale(1) rotate(-7deg);opacity:1}}
+@media(prefers-reduced-motion:reduce){.celebrate .badge,.celebrate .final-stamp{animation:none!important}}
+@media(max-width:600px){#dialogue.speaking .nameplate::after{font-size:11px}.celebrate .final-stamp{padding:5px 12px}}
 </style><body><header><button id="home">⌂ <span>Bandar Hijau</span></button><span id="status">RBT • Tahun 5</span><button id="book">Buku Misi</button><button id="settings">Tetapan</button></header><main><div id="playWorkspace"><section id="stage"><canvas id="world" width="640" height="360" aria-label="Bandar piksel interaktif"></canvas><div id="spots"></div><div id="title"></div><div id="objective"></div></section><aside id="cameraPanel" aria-label="Pratonton kamera untuk Misi 3" hidden><div class="camera-header"><strong>Pratonton Kamera</strong><span id="cameraIndicator">Kamera dimatikan</span></div><div id="cameraViewport"><video id="camera" aria-label="Paparan kamera secara langsung" autoplay muted playsinline hidden></video><div id="cameraPlaceholder"><span aria-hidden="true">📷</span><p>Kamera akan dipaparkan di sini selepas diaktifkan.</p></div></div><p id="cameraStatus" role="status">Gunakan tetikus atau sentuhan, atau aktifkan Kawalan Tangan.</p><div id="cameraControls"></div><p class="cameraPrivacy">Kamera hanya dibuka dengan izin. Video tidak dirakam.</p></aside></div><section id="dialogue"><canvas id="portrait" width="80" height="96"></canvas><div class="dialogue-box"><strong class="nameplate">ALYA <small>Rakan penerokaan kamu</small></strong><p id="speech"></p><button id="listen">Dengar Semula</button><span id="voiceStatus"></span></div></section><section id="activity"></section><section id="controls"></section></main><dialog id="modal"><button id="close">Tutup ×</button><div id="modalBody"></div></dialog><div id="toast" role="status"></div><script>
 const definition='Pertanian bandar ialah aktiviti bercucuk tanam di kawasan bandar dengan memanfaatkan ruang yang ada, seperti balkoni, halaman rumah, tanah lot dan kebun komuniti, untuk menghasilkan tanaman makanan. Penanaman boleh dijalankan secara konvensional atau menggunakan teknologi moden.';
 const places=[
@@ -72,7 +84,7 @@ systems.push({name:'Akuaponik',text:'Akuaponik menggabungkan ternakan ikan denga
 
 function freshCase(){return {observed:[],choices:[],diagnosed:false,predicted:false,repaired:false,explained:false};}
 const badgeNames=['Peneroka Pertanian Bandar','Pakar Sistem Takungan','Pakar Makmal','Penyelamat Sistem Penanaman','Wira Pertanian Bandar'];
-function freshProgress(mode='kendiri'){return {version:3,started:false,scene:'map',visited:[],notes:[],badges:[],stamps:[],answers:[],drafts:{},hints:[],inspected:[[],[],[],[]],summarySeen:false,assembly:[],simulationSeen:false,cases:[freshCase(),freshCase()],repairLog:[],finalDone:[],cards:[],completedAt:null,mode,vol:{voice:.8,music:.15,sfx:.5},muted:false};}
+function freshProgress(mode='kendiri'){return {version:3,started:false,scene:'map',visited:[],notes:[],badges:[],stamps:[],answers:[],drafts:{},hints:[],inspected:[[],[],[],[]],summarySeen:false,assembly:[],simulationSeen:false,cases:[freshCase(),freshCase()],repairLog:[],finalDone:[],cards:[],completedAt:null,mode,vol:{voice:.8,music:.22,sfx:.5},muted:false,autoVoice:true,musicEnabled:true};}
 function normalizeProgress(raw,mode='kendiri'){
  const base=freshProgress(mode);if(!raw||typeof raw!=='object')return base;
  for(const k of ['visited','notes','badges','stamps','answers','hints','assembly'])if(Array.isArray(raw[k]))base[k]=raw[k];
@@ -82,7 +94,7 @@ function normalizeProgress(raw,mode='kendiri'){
  base.scene=['map','pangsa','teres','kebun','lab','sim0','sim1','sim2','sim3','workshop','flow','gate4','repair0','repair1','final0','final1','final2','ending'].includes(raw.scene)?raw.scene:'map';
  base.cases=base.cases.map((c,i)=>{const old=raw.cases?.[i];if(!old)return c;for(const k of ['observed','choices'])if(Array.isArray(old[k]))c[k]=old[k];for(const k of ['diagnosed','predicted','repaired','explained'])c[k]=old[k]===true;return c});base.repairLog=Array.isArray(raw.repairLog)?raw.repairLog:[];base.finalDone=Array.isArray(raw.finalDone)?[...new Set(raw.finalDone.filter(n=>[0,1,2].includes(n)))]:[];base.cards=Array.isArray(raw.cards)?raw.cards:[];base.completedAt=Number.isFinite(raw.completedAt)&&[1,2,3,4,5].every(id=>base.badges.includes(id))?raw.completedAt:null;if(base.scene==='ending'&&!base.completedAt)base.scene='map';
  base.started=!!(raw.started||base.visited.length||base.answers.length||base.badges.length);base.summarySeen=!!raw.summarySeen;base.simulationSeen=!!raw.simulationSeen;
- base.drafts=raw.drafts&&typeof raw.drafts==='object'?raw.drafts:{};base.muted=!!raw.muted;
+ base.drafts=raw.drafts&&typeof raw.drafts==='object'?raw.drafts:{};base.muted=!!raw.muted;base.autoVoice=raw.autoVoice!==false;base.musicEnabled=raw.musicEnabled!==false;
  for(const k of Object.keys(base.vol))if(Number.isFinite(raw.vol?.[k]))base.vol[k]=Math.max(0,Math.min(1,raw.vol[k]));return base;
 }
 function loadProfiles(storage){let profiles={kendiri:freshProgress(),kelas:freshProgress('kelas')},mode='kendiri';const raw=JSON.parse(storage.getItem('misi-bandar-v2')||'null');if(raw){mode=raw.mode==='kelas'?'kelas':'kendiri';for(const m of ['kendiri','kelas'])profiles[m]=normalizeProgress(raw.profiles?.[m],m)}else{const old=JSON.parse(storage.getItem('misi-bandar-v1')||'null');if(old){mode=old.mode==='kelas'?'kelas':'kendiri';profiles[mode]=normalizeProgress(old,mode)}}return {profiles,mode};}
@@ -224,6 +236,145 @@ function drawRepair(canvas,i,repaired,t,art){
  if(i===0){rect(237,277,40,30,repaired?'#428953':'#9f5142');c.fillStyle='#fff5d9';c.fillText(repaired?'HIDUP':'MATI',238,296)}
 }
 
+// Original, royalty-free procedural music and game SFX; no third-party audio assets required.
+// Voice preference: existing recordings when present, otherwise device ms-MY speech synthesis.
+class AudioDirector {
+ constructor(getPrefs, onSpeaking, onStatus) {
+  this.getPrefs=getPrefs; this.onSpeaking=onSpeaking; this.onStatus=onStatus;
+  this.activated=false; this.ctx=null; this.musicBus=null; this.fxBus=null;
+  this.musicTimer=null; this.nextStepAt=0; this.step=0; this.ducked=false;
+  this.voiceToken=0; this.currentAudio=null; this.utterance=null; this.speaking=false;
+  this.missingRecordings=new Set(); this.lastText=''; this.lastId='';
+ }
+ activate() {
+  this.activated=true;
+  if(!this.ctx) {
+   try {
+    const C=window.AudioContext||window.webkitAudioContext;
+    if(C){this.ctx=new C();this.musicBus=this.ctx.createGain();this.fxBus=this.ctx.createGain();this.musicBus.connect(this.ctx.destination);this.fxBus.connect(this.ctx.destination)}
+   }catch{ /* Voice and captions remain usable without Web Audio. */ }
+  }
+  if(this.ctx){this.ctx.resume().catch(()=>{});if(!this.musicTimer){this.nextStepAt=this.ctx.currentTime+.1;this.musicTimer=setInterval(()=>this.schedule(),140)}}
+  this.sync();
+ }
+ sync(){
+  const p=this.getPrefs();
+  if(this.ctx){
+   const t=this.ctx.currentTime;
+   this.musicBus?.gain.setTargetAtTime(!p.muted&&p.musicEnabled!==false?(p.vol?.music??.15)*(this.ducked?.23:.7):0,t,.09);
+   this.fxBus?.gain.setTargetAtTime(!p.muted?(p.vol?.sfx??.5)*.7:0,t,.03);
+  }
+  if(this.currentAudio)this.currentAudio.volume=p.muted?0:(p.vol?.voice??.8);
+  if(p.muted&&this.speaking)this.stopVoice();
+ }
+ // Gentle original 32-step garden melody; musical beats are synthesized locally.
+ schedule(){
+  if(!this.ctx||this.ctx.state!=='running')return;
+  if(typeof document!=='undefined'&&document.hidden){this.nextStepAt=this.ctx.currentTime+.15;return}
+  const ctx=this.ctx;
+  if(this.nextStepAt<ctx.currentTime-.5)this.nextStepAt=ctx.currentTime+.08;
+  const eighth=60/94/2;
+  while(this.nextStepAt<ctx.currentTime+.35){
+   const i=this.step%32;
+   const melody=[72,null,76,74,72,null,69,71,72,76,79,null,76,74,72,null,69,null,72,74,76,null,74,72,71,null,69,67,69,71,72,null];
+   const bass=[48,48,53,53,57,57,55,55][Math.floor(i/4)];
+   if(i%4===0)this.note(this.midi(bass),this.nextStepAt,1.1,.13,'triangle',this.musicBus);
+   if(melody[i]!=null)this.note(this.midi(melody[i]),this.nextStepAt,.24,.12,'sine',this.musicBus);
+   if(i%8===4)this.note(this.midi(bass+12),this.nextStepAt,.55,.055,'sine',this.musicBus);
+   this.step++;this.nextStepAt+=eighth;
+  }
+ }
+ midi(n){return 440*Math.pow(2,(n-69)/12)}
+ note(freq,at,duration,level,type='sine',bus=this.fxBus){
+  if(!this.ctx||!bus)return;
+  const o=this.ctx.createOscillator(),a=this.ctx.createGain();
+  o.type=type;o.frequency.setValueAtTime(freq,at);
+  a.gain.setValueAtTime(.0001,at);
+  a.gain.exponentialRampToValueAtTime(Math.max(.001,level),at+.025);
+  a.gain.exponentialRampToValueAtTime(.0001,at+duration);
+  o.connect(a).connect(bus);o.start(at);o.stop(at+duration+.03);
+ }
+ effect(kind='click'){
+  if(this.getPrefs().muted||!this.ctx)return;
+  const now=this.ctx.currentTime+.012;
+  if(kind==='click'){this.note(620,now,.075,.12,'sine');this.note(830,now+.04,.1,.075,'triangle')}
+  if(kind==='correct'){this.note(660,now,.11,.17);this.note(880,now+.095,.19,.15)}
+  if(kind==='error'){this.note(392,now,.13,.1,'triangle');this.note(349,now+.1,.2,.08,'sine')}
+  if(kind==='reward'||kind==='success'){[660,830,990,1320].forEach((f,i)=>this.note(f,now+i*.11,.26,.22,'sine'))}
+  if(kind==='stamp'){
+   this.note(125,now,.20,.55,'triangle');
+   this.note(71,now+.025,.27,.45,'sawtooth');
+   this.note(260,now+.04,.09,.15,'square');
+   this.note(880,now+.19,.26,.13,'sine');
+  }
+ }
+ _isCurrent(token){return token===this.voiceToken}
+ _markSpeaking(v){this.speaking=v;this.ducked=v;this.onSpeaking(v);this.sync()}
+ stopVoice(){
+  this.voiceToken++;
+  try{window.speechSynthesis?.cancel()}catch{}
+  if(this.currentAudio){this.currentAudio.onended=null;this.currentAudio.onerror=null;this.currentAudio.pause();this.currentAudio=null}
+  this.utterance=null;
+  this._markSpeaking(false);
+ }
+ present(text,id){
+  this.lastText=String(text||'');this.lastId=id||'';
+  this.stopVoice();
+  if(this.getPrefs().muted){this.onStatus('Audio dibisukan. Sari kata masih dipaparkan.');return}
+  if(this.getPrefs().autoVoice===false){this.onStatus('Bacaan automatik dimatikan. Tekan Dengar Semula.');return}
+  if(!this.activated){this.onStatus('Tekan Mula untuk mengaktifkan suara dan muzik.');return}
+  this.speak(this.lastText,this.lastId,false);
+ }
+ speak(text=this.lastText,id=this.lastId,manual=true){
+  if(manual)this.activate();
+  this.stopVoice();
+  if(this.getPrefs().muted){this.onStatus('Audio dibisukan dalam Tetapan.');return}
+  if(!text){this.onStatus('Tiada dialog untuk dibaca.');return}
+  const token=this.voiceToken;
+  const synth=window.speechSynthesis;
+  const all=synth?.getVoices?.()||[];
+  const matches=all.filter(v=>/^ms([-_]MY)?$/i.test(v.lang));
+  const preferred=matches.find(v=>/female|woman|wanita|perempuan|siti|nur|amira|yasmin|google/i.test(v.name))||matches[0]||null;
+  if(preferred){this.nativeSpeech(text,token,preferred,true);return}
+  if(id&&!this.missingRecordings.has(id)&&location.protocol!=='file:'){this.tryRecording(id,text,token);return}
+  this.nativeSpeech(text,token,null,false);
+ }
+ tryRecording(id,text,token){
+  const safe=/^[a-zA-Z0-9-]+$/.test(id)?id:null;
+  if(!safe){this.nativeSpeech(text,token,null,false);return}
+  const a=new Audio('assets/audio/'+safe+'.mp3');
+  this.currentAudio=a; a.preload='auto';a.volume=this.getPrefs().vol?.voice??.8;
+  let fallback=false;
+  const fail=()=>{
+   if(fallback||!this._isCurrent(token))return;
+   fallback=true;this.missingRecordings.add(safe);this.currentAudio=null;
+   this.nativeSpeech(text,token,null,false);
+  };
+  a.onended=()=>{if(this._isCurrent(token)){this.currentAudio=null;this._markSpeaking(false);this.onStatus('Bacaan selesai. Tekan Dengar Semula untuk ulang.')}}
+  a.onerror=fail;
+  a.play().then(()=>{if(this._isCurrent(token)){this._markSpeaking(true);this.onStatus('Alya sedang bercakap (rakaman ms-MY).')}}).catch(fail);
+ }
+ nativeSpeech(text,token,voice,verified){
+  const synth=window.speechSynthesis;
+  if(!synth||typeof window.SpeechSynthesisUtterance!=='function'){
+   this._markSpeaking(false);this.onStatus('Suara ms-MY tidak tersedia. Baca sari kata atau sediakan fail rakaman.');return
+  }
+  try{
+   const u=new SpeechSynthesisUtterance(text);
+   u.lang='ms-MY';u.rate=.94;u.pitch=1.06;u.volume=this.getPrefs().vol?.voice??.8;
+   if(voice)u.voice=voice;
+   this.utterance=u;
+   u.onstart=()=>{if(this._isCurrent(token)){this._markSpeaking(true);this.onStatus(verified?'Alya sedang bercakap (suara ms-MY peranti).':'Alya sedang bercakap (suara bergantung pada peranti).')}}
+   u.onend=()=>{if(this._isCurrent(token)){this.utterance=null;this._markSpeaking(false);this.onStatus('Bacaan selesai. Tekan Dengar Semula untuk ulang.')}}
+   u.onerror=()=>{if(this._isCurrent(token)){this.utterance=null;this._markSpeaking(false);this.onStatus('Bacaan tidak tersedia. Sila baca sari kata atau cuba Dengar Semula.')}}
+   synth.speak(u);
+   this.onStatus(verified?'Memulakan suara ms-MY…':'Mencuba suara peranti. Suara wanita ms-MY tidak dijamin.');
+  }catch{
+   this._markSpeaking(false);this.onStatus('Suara tidak tersedia. Baca sari kata.');
+  }
+ }
+}
+
 const colors={grass:'#9dbd75',dark:'#335e48',leaf:'#54885a'};
 function renderer(canvas){const c=canvas.getContext('2d');c.imageSmoothingEnabled=false;const rect=(x,y,w,h,col)=>{c.fillStyle=col;c.fillRect(Math.round(x),Math.round(y),w,h)};const poly=(pts,col)=>{c.fillStyle=col;c.beginPath();pts.forEach(([x,y],i)=>i?c.lineTo(x,y):c.moveTo(x,y));c.closePath();c.fill()};
 function tree(x,y,s=1){c.save();c.translate(x,y);c.scale(s,s);rect(-13,9,34,8,'#12974f');rect(-3,-4,7,23,'#8d5137');rect(-17,-26,33,27,'#22583d');rect(-23,-20,42,16,'#078c47');rect(-15,-32,26,26,'#20ad50');rect(-12,-29,14,5,'#68c651');rect(5,-16,9,4,'#a0d65c');c.restore()}
@@ -307,7 +458,10 @@ const $=s=>document.querySelector(s);
 let profiles={kendiri:freshProgress(),kelas:freshProgress('kelas')},mode='kendiri',storageOK=true;
 try{({profiles,mode}=loadProfiles(localStorage))}catch{storageOK=false}
 let state=profiles[mode],hands=null,assemblyUI=null,flowCompleted=false;
-let scene='home',paused=false,simTime=0,last=0,speech='',speechID='',talking=false,audio,musicGain,ctx,review=false;
+let scene='home',paused=false,simTime=0,last=0,speech='',speechID='',talking=false,review=false;
+const sound=new AudioDirector(()=>state,playing=>{talking=playing;$('#dialogue').classList.toggle('speaking',playing)},message=>{$('#voiceStatus').textContent=message});
+document.addEventListener('pointerdown',()=>sound.activate(),{passive:true});
+document.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' ')sound.activate()});
 const art=renderer($('#world')),portrait=renderer($('#portrait'));
 const phase3=createPhase3({$,btn,spot,say,save,go,modal,esc,toast,award,answerForm,state:()=>state,time:()=>simTime,missionMenu,book});
 function save(){profiles[state.mode]=state;try{localStorage.setItem('misi-bandar-v2',JSON.stringify({mode:state.mode,profiles}))}catch{storageOK=false;toast('Simpanan tidak tersedia. Eksport rekod sebelum keluar.')}}
@@ -317,11 +471,11 @@ function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;',
 function btn(text,fn,parent='#controls',cls=''){const b=document.createElement('button');b.textContent=text;b.className=cls;b.onclick=()=>{tone();fn()};$(parent).append(b);return b}
 function spot(text,x,y,fn){const b=btn(text,fn,'#spots','spot');b.style.left=x+'%';b.style.top=y+'%'}
 function modal(html){$('#modalBody').innerHTML=html;if(!$('#modal').open)$('#modal').showModal()}
-function stopVoice(){window.speechSynthesis?.cancel();if(audio){audio.pause();audio=null}talking=false;if(musicGain)musicGain.gain.value=state.muted?0:state.vol.music*.08}
-function say(text,id=''){stopVoice();speech=text;speechID=id;$('#speech').textContent=text;$('#voiceStatus').textContent='Sari kata penuh tersedia.'}
-function speak(){stopVoice();if(state.muted){toast('Audio dibisukan dalam Tetapan.');return}const voice=window.speechSynthesis?.getVoices().find(v=>/^ms[-_]MY$/i.test(v.lang));const fail=()=>{$('#voiceStatus').textContent='Rakaman ms-MY belum tersedia. Sila baca sari kata.';stopVoice()};talking=true;if(musicGain)musicGain.gain.value=state.vol.music*.02;if(voice){const u=new SpeechSynthesisUtterance(speech);u.voice=voice;u.lang='ms-MY';u.volume=state.vol.voice;u.onend=stopVoice;u.onerror=fail;speechSynthesis.speak(u);$('#voiceStatus').textContent='Suara ms-MY peranti; rakaman wanita disyorkan.'}else if(speechID){audio=new Audio('assets/audio/'+speechID+'.mp3');audio.volume=state.vol.voice;audio.onended=stopVoice;audio.onerror=fail;audio.play().catch(fail)}else fail()}
-function tone(freq=620){if(state.muted)return;try{ctx??=new AudioContext();ctx.resume();const o=ctx.createOscillator(),g=ctx.createGain();o.type='sine';o.frequency.value=freq;g.gain.setValueAtTime(state.vol.sfx*.08,ctx.currentTime);g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+.15);o.connect(g).connect(ctx.destination);o.start();o.stop(ctx.currentTime+.16)}catch{}}
-function music(){try{ctx??=new AudioContext();ctx.resume();if(musicGain)return;musicGain=ctx.createGain();musicGain.gain.value=state.muted?0:state.vol.music*.08;musicGain.connect(ctx.destination);[261.63,329.63,392].forEach(f=>{const o=ctx.createOscillator();o.type='sine';o.frequency.value=f;o.connect(musicGain);o.start()})}catch{}}
+function stopVoice(){sound.stopVoice()}
+function say(text,id=''){speech=text;speechID=id;$('#speech').textContent=text;sound.present(text,id)}
+function speak(){sound.speak(speech,speechID,true)}
+function tone(){sound.effect('click')}
+function music(){sound.activate()}
 function unlock(id){if(!state.notes.includes(id))state.notes.push(id);save()}
 function go(next){if(next==='ending'&&![1,2,3,4,5].every(n=>state.badges.includes(n))){toast('Lengkapkan kelima-lima misi sebelum menamatkan permainan.');return}const required=/^repair[01]$/.test(next)||next==='gate4'?3:/^final[0-2]$/.test(next)?4:next==='ending'?5:0;if(required&&state.mode!=='kelas'&&!state.badges.includes(required)){toast('Selesaikan misi sebelumnya dahulu.');return}$('#assemblyBoard')?.remove();hands?.stop();hands=null;assemblyUI=null;$('#cameraPanel').hidden=true;$('#playWorkspace').classList.remove('camera-active');$('#camera').hidden=true;$('#cameraPlaceholder').hidden=false;$('#cameraControls').replaceChildren();$('#cameraIndicator').textContent='Kamera dimatikan';$('#activity').replaceChildren();stopVoice();scene=next;paused=false;simTime=0;if(next!=='home'&&!review){state.scene=next;state.started=true;save()}$('#spots').replaceChildren();$('#controls').replaceChildren();$('#title').innerHTML='';$('#objective').textContent='';$('#status').textContent=`${state.mode==='kelas'?'Mod Kelas':'Mod Kendiri'} · ${state.badges.length}/5 lencana`;
 if(next==='home'){review=false;$('#title').innerHTML='<span class="eyebrow">PENGEMBARAAN RBT • TAHUN 5</span><h1>Misi Pertanian<br>Bandar</h1><p>Jelajah Sistem Penanaman Secara Takungan</p>';$('#objective').textContent='Selamat datang ke Bandar Hijau · Fasa 3';say('Hai, saya Alya! Ruang rumah kita kecil, tetapi impian kebun kita besar. Mari bantu jiran meneroka pertanian bandar.','intro');btn('Mula Permainan Baharu',newGame,'#controls','primary');btn('Sambung Permainan',()=>{music();review=false;go(state.scene||'map')}).disabled=!state.started;btn('Pilih Misi / Main Semula',missionMenu);btn('Buku Misi Pertanian',book);btn('Mod Ulang Kaji',()=>{review=true;go('lab')});btn('Tetapan',settings)}
@@ -338,12 +492,30 @@ else if(next==='ending')phase3.ending();}
 
 function answer1(){if(state.visited.length<6){toast('Periksa dua objek di setiap tiga tempat dahulu.');return}if(!state.summarySeen){say('Kamu telah melihat pasu di balkoni, tanaman bertingkat dan kebun komuniti. Apakah persamaannya? Semuanya menghasilkan makanan dengan menggunakan ruang yang ada. '+definition,'definition');modal('<h2>Rumuskan bersama Alya</h2><p>'+definition+'</p><p>Ingat pemerhatian kamu: sawi di balkoni, susunan menegak di rumah teres, dan kebun komuniti di bandar. Bincangkan persamaan aktiviti ini sebelum menulis penerangan sendiri.</p><button id="understood">Saya sudah membuat rumusan</button>');$('#understood').onclick=()=>{state.summarySeen=true;unlock('definition');$('#modal').close();answer1()};return}answerForm('misi1','Terangkan maksud pertanian bandar dan berikan sekurang-kurangnya satu contoh yang sesuai.',()=>award(1,'lab'))}
 function answerForm(id,prompt,done){const previous=state.answers.filter(a=>a.id===id).at(-1);modal(`<h2>Catatan Peneroka</h2><p>${prompt}</p>${state.mode==='kelas'?'<p>Guru: gunakan Lembaran Respons Individu. Catatan komputer ini ialah rekod perbincangan kelas sahaja.</p>':''}<label>Jawapan kamu<textarea id="answer" maxlength="5000">${esc(state.drafts[id]??previous?.text??'')}</textarea></label><p>Jawapan terbuka disimpan untuk pertimbangan guru. Lencana menunjukkan aktiviti selesai, bukan Tahap Penguasaan.</p><p id="answerError" role="alert"></p><button id="submitAnswer">Simpan Catatan</button>`);$('#answer').oninput=()=>{state.drafts[id]=$('#answer').value;save()};let submitted=false;$('#submitAnswer').onclick=()=>{if(submitted)return;const text=$('#answer').value.trim();if(!text){$('#answerError').textContent='Tulis penerangan kamu dahulu.';return}submitted=true;delete state.drafts[id];state.answers.push({id,text,time:Date.now(),mode:state.mode,attempt:state.answers.filter(a=>a.id===id).length+1});save();$('#modal').close();done()}}
-function award(n,next){if(review)return;if(n===4&&!state.cases.every(c=>c.repaired&&c.explained))return;if(n===5&&state.finalDone.length!==3)return;const missing=Array.from({length:n-1},(_,i)=>i+1).filter(id=>!state.badges.includes(id));if(missing.length){if(state.mode==='kelas'){modal('<h2>Pratonton Kelas — Belum Tamat</h2><p>Aktiviti ini telah ditunjukkan, tetapi Misi '+missing.join(', ')+' belum dilengkapkan. Tiada lencana baharu diberikan dan kemajuan akhir tidak diubah.</p><button id="previewReturn">Kembali ke Senarai Misi</button>');$('#previewReturn').onclick=()=>{$('#modal').close();missionMenu()}}else toast('Selesaikan misi sebelumnya dahulu.');return;}if(!state.badges.includes(n)){state.badges.push(n);state.stamps.push({mission:n,time:Date.now()})}if(n===5&&[1,2,3,4,5].every(id=>state.badges.includes(id)))state.completedAt??=Date.now();state.scene=next;save();say(n===4?'Syabas! Kamu berjaya mengenal pasti punca masalah dan memulihkan kedua-dua sistem penanaman!':'Tahniah! Kamu memperoleh lencana '+badgeNames[n-1]+'. Catatan kamu disimpan untuk semakan guru.','congrats-'+n);modal(`<div class="celebrate"><h2>Tahniah, peneroka!</h2><canvas id="stampAlya" width="80" height="96"></canvas><div class="badge">✦</div><h3>${badgeNames[n-1]}</h3><p>${state.badges.length}/5 lencana terkumpul</p><div class="stamp final-stamp">SELESAI!</div><button id="nextMission">${n===1?'Terokai Pusat Teknologi':n===2?'Masuk Makmal Tani Pintar':n===3?'Lihat Pintu Misi 4':n===4?'Masuk Balai Bandar Hijau':'Tamat Permainan'}</button></div>`);tone(880);setTimeout(()=>tone(180),1000);$('#nextMission').onclick=()=>{$('#modal').close();go(next)}}
+function award(n,next){if(review)return;if(n===4&&!state.cases.every(c=>c.repaired&&c.explained))return;if(n===5&&state.finalDone.length!==3)return;const missing=Array.from({length:n-1},(_,i)=>i+1).filter(id=>!state.badges.includes(id));if(missing.length){if(state.mode==='kelas'){modal('<h2>Pratonton Kelas — Belum Tamat</h2><p>Aktiviti ini telah ditunjukkan, tetapi Misi '+missing.join(', ')+' belum dilengkapkan. Tiada lencana baharu diberikan dan kemajuan akhir tidak diubah.</p><button id="previewReturn">Kembali ke Senarai Misi</button>');$('#previewReturn').onclick=()=>{$('#modal').close();missionMenu()}}else toast('Selesaikan misi sebelumnya dahulu.');return;}if(!state.badges.includes(n)){state.badges.push(n);state.stamps.push({mission:n,time:Date.now()})}if(n===5&&[1,2,3,4,5].every(id=>state.badges.includes(id)))state.completedAt??=Date.now();state.scene=next;save();say(n===4?'Syabas! Kamu berjaya mengenal pasti punca masalah dan memulihkan kedua-dua sistem penanaman!':'Tahniah! Kamu memperoleh lencana '+badgeNames[n-1]+'. Catatan kamu disimpan untuk semakan guru.','congrats-'+n);modal(`<div class="celebrate"><h2>Tahniah, peneroka!</h2><canvas id="stampAlya" width="80" height="96"></canvas><div class="badge">✦</div><h3>${badgeNames[n-1]}</h3><p>${state.badges.length}/5 lencana terkumpul</p><div class="stamp final-stamp">SELESAI!</div><button id="nextMission">${n===1?'Terokai Pusat Teknologi':n===2?'Masuk Makmal Tani Pintar':n===3?'Lihat Pintu Misi 4':n===4?'Masuk Balai Bandar Hijau':'Tamat Permainan'}</button></div>`);sound.effect('reward');setTimeout(()=>{if($('#stampAlya'))sound.effect('stamp')},950);$('#nextMission').onclick=()=>{$('#modal').close();go(next)}}
 function answer2(){if(review){toast('Mod ulang kaji tidak memberikan lencana. Sambung permainan untuk merekod kemajuan.');return}if(state.mode==='kelas'){modal('<h2>Perbincangan Kelas — Dua Sistem</h2><p>Guru: tunjukkan dua sistem, minta murid berbincang dan catat jawapan masing-masing pada Lembaran Respons Individu. Rekod ini bukan jawapan individu semua murid.</p><label>Catatan guru (pilihan)<textarea id="classSystemNote"></textarea></label><button id="confirmClassSystems">Perbincangan Selesai</button>');$('#confirmClassSystems').onclick=()=>{const id='misi2';state.answers.push({id,text:$('#classSystemNote').value.trim(),kind:'class_activity',individualAnswersCollected:false,time:Date.now(),mode:'kelas',attempt:state.answers.filter(a=>a.id===id).length+1});save();$('#modal').close();award(2,'workshop')};return}if(systems.some((s,i)=>state.inspected[i].length<s.parts.length)){toast('Periksa semua komponen di keempat-empat stesen dahulu.');return}modal('<h2>Jelaskan dua sistem</h2><p>Pilih dua sistem yang berbeza. Terangkan urutan pergerakan air serta fungsi komponen.</p>'+[0,1].map(n=>`<label>Sistem ${n+1}<select id="systemChoice${n}">${systems.map((s,i)=>`<option value="${i}" ${i===n?'selected':''}>${s.name}</option>`).join('')}</select></label><label>Penerangan ${n+1}<textarea id="explanation${n}"></textarea></label>`).join('')+'<p id="systemError" role="alert"></p><button id="saveSystems">Simpan Penerangan</button>');const draft=state.drafts.misi2;for(let n=0;n<2;n++){if(draft){$('#systemChoice'+n).value=draft.choices[n];$('#explanation'+n).value=draft.texts[n]}for(const id of ['systemChoice','explanation'])$('#'+id+n).oninput=()=>{state.drafts.misi2={choices:[0,1].map(i=>$('#systemChoice'+i).value),texts:[0,1].map(i=>$('#explanation'+i).value)};save()}}let submitted=false;$('#saveSystems').onclick=()=>{if(submitted)return;const choices=[0,1].map(n=>Number($('#systemChoice'+n).value)),texts=[0,1].map(n=>$('#explanation'+n).value.trim());if(choices[0]===choices[1]||texts.some(t=>!t)){$('#systemError').textContent='Pilih dua sistem berbeza dan lengkapkan kedua-dua penerangan.';return}submitted=true;delete state.drafts.misi2;state.answers.push({id:'misi2',text:choices.map((c,i)=>systems[c].name+': '+texts[i]).join('\n'),systems:choices,time:Date.now(),mode:state.mode,attempt:state.answers.filter(a=>a.id==='misi2').length+1});award(2,'workshop')}}
 function compare(){modal(`<h2>Bandingkan Sistem</h2><div class="compare">${systems.map((s,i)=>`<article><h3>${s.name}</h3><p>${s.text}</p><p>${i===1||i===2?'Pam mengalirkan air dalam kitaran.':i===3?'Air naik melalui tindakan kapilari, tanpa pam.':'Larutan statik, tanpa pam kitaran.'}</p><button data-system="${i}">Lihat Animasi</button></article>`).join('')}</div><p>Bandingkan khususnya kultur air: tanpa kitaran menyimpan larutan statik, manakala dengan kitaran menggunakan pam dan salur kembali. Akuaponik melibatkan ikan dan mikroorganisma; bekas pengairan kendiri menggunakan tindakan kapilari.</p>`);document.querySelectorAll('[data-system]').forEach(b=>b.onclick=()=>{$('#modal').close();go('sim'+b.dataset.system)})}
 function book(){modal(`<h2>Buku Misi Pertanian</h2><p>${state.badges.length}/5 lencana · Kemajuan disimpan pada pelayar ini sahaja.</p><h3>Koleksi Lencana</h3><p>${state.badges.length?state.badges.map(n=>'✦ '+badgeNames[n-1]+' · SELESAI!').join('<br>'):'Belum ada lencana.'}</p><h3>Nota Pertanian</h3>${state.notes.map(n=>`<article>${n==='definition'?definition:n.startsWith('repair')?repairCases[Number(n.at(-1))]?.note||'':n.startsWith('system')?(systems[Number(n.at(-1))]?.text||''):places.find(p=>p.id===n)?.items.map(x=>x[1]).join(' ')||''}</article>`).join('')||'<p>Periksa objek untuk membuka nota.</p>'}<h3>Cap Tugasan</h3>${state.stamps.map(st=>`<p>Misi ${st.mission} · SELESAI · ${new Date(st.time).toLocaleString('ms-MY')}</p>`).join('')}<h3>Rekod Pembelajaran</h3><p>${state.answers.length} catatan · ${state.hints.length} penggunaan petunjuk</p>${state.answers.map(a=>`<article><b>${esc(a.id.replace('misi','Misi '))} · Cubaan ${a.attempt}</b><p>${esc(a.text)}</p></article>`).join('')}<p>Guru menilai ketepatan maksud, kesesuaian contoh, urutan aliran dan fungsi komponen. Terima penerangan setara yang munasabah; rekod ini tidak memberikan TP secara automatik.</p><p>${state.badges.includes(5)?'Semua misi selesai. Semak penerangan dan pilihan sistem bersama guru.':''}</p><button id="viewCard">Kad Pemilihan Sistem Penanaman</button><button id="viewReport">Laporan Pembelajaran</button><button id="export">Eksport Rekod PBD</button><button id="replay">Ulang Kaji Animasi</button>`);$('#viewCard').onclick=phase3.card;$('#viewCard').disabled=!state.cards.length;$('#viewReport').onclick=phase3.report;$('#export').onclick=()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(state,null,2)],{type:'application/json'}));a.download='rekod-misi-pertanian.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)};$('#replay').onclick=()=>{$('#modal').close();review=true;go('lab')}}
 function missionMenu(){modal('<h2>Pilih Misi / Main Semula</h2><p>Main semula mengekalkan lencana dan sejarah jawapan.</p><div id="missionButtons"></div><p>Lencana menunjukkan penyelesaian aktiviti, bukan Tahap Penguasaan.</p>');[['Misi 1 · Misteri Pertanian Bandar','map'],['Misi 2 · Rahsia Sistem Takungan','lab'],['Misi 3 · Makmal Tani Pintar','workshop'],['Misi 4 · Operasi Selamatkan Tanaman','gate4'],['Misi Akhir · Wira Pertanian Bandar','final0']].forEach(([label,target],i)=>{const b=btn(label,()=>{$('#modal').close();review=false;phase3.replay(target)},'#missionButtons');b.disabled=i>0&&!state.badges.includes(i)&&state.mode!=='kelas'})}
-function settings(){modal(`<h2>Tetapan</h2><label>Mod permainan <select id="mode"><option value="kendiri">Mod Kendiri</option><option value="kelas">Mod Kelas</option></select></label><label><input id="mute" type="checkbox" ${state.muted?'checked':''}> Bisukan semua audio</label>${['voice','music','sfx'].map((x,i)=>`<label>${['Kelantangan suara','Kelantangan muzik latar','Kelantangan kesan bunyi'][i]}<input type="range" data-vol="${x}" min="0" max="1" step=".05" value="${state.vol[x]}"></label>`).join('')}<p>Suara: hanya ms-MY. Jika suara peranti atau rakaman tiada, sari kata kekal tersedia.</p><p>Mod Kelas membolehkan guru terus memilih lima misi yang tersedia. Gunakan respons individu untuk PBD.</p><p>Cadangan 60 minit: induksi 5 · Misi 1: 8 · Misi 2: 14 · Misi 3: 10 · Misi 4: 8 · akhir: 10 · penutup: 5. Fasa 3 menyediakan semua lima misi.</p><p>${storageOK?'Simpanan pelayar tersedia.':'Simpanan pelayar tidak tersedia; eksport rekod sebelum keluar.'}</p>`);$('#mode').value=state.mode;$('#mode').onchange=e=>{save();state=profiles[e.target.value];review=false;save();$('#modal').close();go('home')};$('#mute').onchange=e=>{state.muted=e.target.checked;stopVoice();save()};document.querySelectorAll('[data-vol]').forEach(el=>el.oninput=()=>{state.vol[el.dataset.vol]=Number(el.value);if(musicGain)musicGain.gain.value=state.muted?0:state.vol.music*.08;save()})}
+function settings(){
+ modal(`<h2>Tetapan</h2>
+ <label>Mod permainan <select id="mode"><option value="kendiri">Mod Kendiri</option><option value="kelas">Mod Kelas</option></select></label>
+ <label><input id="mute" type="checkbox" ${state.muted?'checked':''}> Bisukan semua audio</label>
+ <label><input id="autoVoice" type="checkbox" ${state.autoVoice!==false?'checked':''}> Bacaan suara Alya secara automatik</label>
+ <label><input id="musicEnabled" type="checkbox" ${state.musicEnabled!==false?'checked':''}> Muzik latar</label>
+ ${['voice','music','sfx'].map((x,i)=>`<label>${['Kelantangan suara','Kelantangan muzik latar','Kelantangan kesan bunyi'][i]}<input type="range" data-vol="${x}" min="0" max="1" step=".05" value="${state.vol[x]}"></label>`).join('')}
+ <p>Suara Bahasa Melayu Malaysia (ms-MY) digunakan jika tersedia. Rekod suara wanita ms-MY boleh diletakkan dalam assets/audio. Tanpa rakaman, suara TTS bergantung pada pelayar dan peranti; suara wanita tidak dijamin. Sari kata sentiasa tersedia.</p>
+ <p>Muzik dan kesan bunyi dihasilkan secara asal di dalam pelayar. Audio bermula selepas interaksi pengguna.</p>
+ <p>Mod Kelas membolehkan guru terus memilih lima misi yang tersedia. Gunakan respons individu untuk PBD.</p>
+ <p>Cadangan 60 minit: induksi 5 · Misi 1: 8 · Misi 2: 14 · Misi 3: 10 · Misi 4: 8 · akhir: 10 · penutup: 5.</p>
+ <p>${storageOK?'Simpanan pelayar tersedia.':'Simpanan pelayar tidak tersedia; eksport rekod sebelum keluar.'}</p>`);
+ $('#mode').value=state.mode;
+ $('#mode').onchange=e=>{save();state=profiles[e.target.value];review=false;stopVoice();sound.sync();save();$('#modal').close();go('home')};
+ $('#mute').onchange=e=>{state.muted=e.target.checked;if(state.muted)stopVoice();sound.sync();save()};
+ $('#autoVoice').onchange=e=>{state.autoVoice=e.target.checked;if(!state.autoVoice){stopVoice();$('#voiceStatus').textContent='Bacaan automatik dimatikan. Tekan Dengar Semula.'}save()};
+ $('#musicEnabled').onchange=e=>{state.musicEnabled=e.target.checked;sound.sync();save()};
+ document.querySelectorAll('[data-vol]').forEach(el=>el.oninput=()=>{state.vol[el.dataset.vol]=Number(el.value);sound.sync();save()});
+}
 $('#home').onclick=()=>go('home');$('#book').onclick=book;$('#settings').onclick=settings;$('#close').onclick=()=>$('#modal').close();$('#listen').onclick=speak;
 function frame(t){const delta=Math.min((t-last)/1000,.1);last=t;if(!paused)simTime+=delta;if(phase3.draw(scene,simTime,$('#world'),art)){}else if(scene==='sim2')drawScience($('#world'),'aqua',simTime);else if(scene==='sim3'||scene==='flow')drawScience($('#world'),'self',simTime);else if(scene==='workshop')drawScience($('#world'),'self',0,state.assembly,true);else art.draw(scene,scene.startsWith('sim')?simTime:t/1000);if(scene==='flow'&&simTime>=6&&!flowCompleted){flowCompleted=true;state.simulationSeen=true;save();$('#explainLab').disabled=false;}if($('#stampAlya')){const stampArt=renderer($('#stampAlya'));stampArt.clear();stampArt.alya(40,50,t/1000,2.7,'stamp');}portrait.clear();portrait.alya(40,50,t/1000,2.7,talking?'talk':Math.floor(t/3000)%2?'wave':'idle');requestAnimationFrame(frame)}go('home');requestAnimationFrame(frame);
 function workshop(){
