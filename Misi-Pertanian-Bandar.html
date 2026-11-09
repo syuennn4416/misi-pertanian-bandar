@@ -204,7 +204,60 @@ header{max-width:1400px}
 #voicePreviewStatus{font-size:14px;line-height:1.5;color:#275944;min-height:24px;font-weight:700;overflow-wrap:anywhere;margin:3px 0}
 #voiceSettings .voiceHint{font-size:13px;color:#53634c;line-height:1.5;margin:0}
 @media(max-width:600px){#voiceSettings{padding:10px}#voiceSettings select{font-size:14px}#voiceSettings legend{font-size:15px}}
-</style><body><header><button id="home">⌂ <span>Bandar Hijau</span></button><span id="status">RBT • Tahun 5</span><button id="book">Buku Misi</button><button id="settings">Tetapan</button></header><main><div id="gameShell" aria-label="Paparan permainan 16:9"><div id="playWorkspace"><section id="stage"><canvas id="world" width="640" height="360" aria-label="Bandar piksel interaktif"></canvas><div id="spots"></div><div id="title"></div><div id="objective"></div><section id="dialogue" aria-label="Dialog Alya"><canvas id="portrait" width="80" height="96"></canvas><div class="dialogue-box"><strong class="nameplate">ALYA <small>Rakan penerokaan kamu</small></strong><p id="speech"></p><div class="dialogue-actions"><button id="listen">Dengar Semula</button><span id="voiceStatus"></span></div></div><button type="button" id="dialogToggle" aria-expanded="false" aria-controls="speech" title="Besarkan dialog Alya">Buka dialog</button></section></section></div><aside id="gameTasks" aria-label="Aktiviti misi"><aside id="cameraPanel" aria-label="Pratonton kamera untuk Misi 3" hidden><div class="camera-header"><strong>Pratonton Kamera</strong><span id="cameraIndicator">Kamera dimatikan</span></div><div id="cameraViewport"><video id="camera" aria-label="Paparan kamera secara langsung" autoplay muted playsinline hidden></video><div id="cameraPlaceholder"><span aria-hidden="true">📷</span><p>Kamera akan dipaparkan di sini selepas diaktifkan.</p></div></div><p id="cameraStatus" role="status">Gunakan tetikus atau sentuhan, atau aktifkan Kawalan Tangan.</p><div id="cameraControls"></div><p class="cameraPrivacy">Kamera hanya dibuka dengan izin. Video tidak dirakam.</p></aside><section id="activity"></section></aside><div id="gameActions"><section id="controls"></section></div></div></main><dialog id="modal"><button id="close">Tutup ×</button><div id="modalBody"></div></dialog><div id="toast" role="status"></div><script>
+
+
+/* Phase 4 UI bugfix: the old #objective used top AND bottom offsets simultaneously,
+   stretching a chocolate-coloured rectangle over nearly the entire game canvas.
+   It is now a normal mission summary in the sidebar, never an overlay on art. */
+#gameTasks #objective.mission-brief{
+  position:static!important;inset:auto!important;top:auto!important;bottom:auto!important;
+  left:auto!important;right:auto!important;display:block!important;
+  width:100%!important;max-width:100%!important;min-height:0!important;height:auto!important;
+  color:#1c4b3a;background:#e8f3db;border:2px solid #91b29a;border-radius:8px;
+  box-shadow:none;text-align:left;font:700 clamp(13px,1.1vw,16px)/1.48 "Trebuchet MS",Arial,sans-serif;
+  overflow-wrap:anywhere;word-break:normal;white-space:normal;
+  padding:10px 12px;margin:0 0 12px;pointer-events:auto!important;z-index:auto!important
+}
+#gameTasks #objective.mission-brief:empty{display:none!important}
+#gameTasks #activity:empty::before{margin-top:0}
+#gameTasks #activity button{overflow-wrap:anywhere}
+#gameTasks,#gameActions{scrollbar-gutter:stable}
+#gameTasks .response-panel{max-width:100%;min-width:0}
+#gameTasks input,#gameTasks select,#gameTasks textarea{box-sizing:border-box;max-width:100%}
+#gameShell button:focus-visible,#gameShell a:focus-visible{outline:3px solid #ffdb6d;outline-offset:2px}
+@media(max-width:780px){
+  #gameTasks #objective.mission-brief{font-size:14px;padding:10px 12px;margin-bottom:10px}
+  #gameTasks,#gameActions{scrollbar-gutter:auto}
+  #gameActions button{min-height:44px}
+  #gameTasks #activity button{min-height:44px}
+}
+@media(max-width:460px){
+  #gameTasks #objective.mission-brief{font-size:14px;line-height:1.5}
+  #gameActions{padding:9px}
+  #gameActions #controls{gap:9px}
+  #gameActions #controls button{flex:1 1 140px;font-size:13px;white-space:normal;overflow-wrap:anywhere}
+}
+
+
+/* Phase 4 assembly controls: keep draggable component tray clear of the upper-left
+   Alya bubble and A/B/C targets. The same validator works for pointer, touch and hand. */
+#stage:has(#assemblyBoard) #assemblyBoard .parts-tray{
+  top:23%!important;bottom:auto!important;left:3%!important;right:auto!important;
+  max-width:94%;display:flex;flex-wrap:wrap;gap:5px;z-index:6
+}
+#stage:has(#assemblyBoard) #assemblyBoard .parts-tray button{
+  min-height:35px;max-width:100%;white-space:normal;overflow-wrap:anywhere
+}
+@media(max-width:780px){
+  #stage:has(#assemblyBoard) #assemblyBoard .parts-tray{
+    top:auto!important;bottom:1%!important;left:1%!important;right:1%!important;
+    width:98%;max-width:98%;justify-content:space-evenly;gap:2px
+  }
+  #stage:has(#assemblyBoard) #assemblyBoard .parts-tray button{
+    min-height:28px;padding:3px 4px;flex:1 1 30%;font-size:clamp(9px,1.75vw,12px)
+  }
+}
+</style><body><header><button id="home">⌂ <span>Bandar Hijau</span></button><span id="status">RBT • Tahun 5</span><button id="book">Buku Misi</button><button id="settings">Tetapan</button></header><main><div id="gameShell" aria-label="Paparan permainan 16:9"><div id="playWorkspace"><section id="stage"><canvas id="world" width="640" height="360" aria-label="Bandar piksel interaktif"></canvas><div id="spots"></div><div id="title"></div><section id="dialogue" aria-label="Dialog Alya"><canvas id="portrait" width="80" height="96"></canvas><div class="dialogue-box"><strong class="nameplate">ALYA <small>Rakan penerokaan kamu</small></strong><p id="speech"></p><div class="dialogue-actions"><button id="listen">Dengar Semula</button><span id="voiceStatus"></span></div></div><button type="button" id="dialogToggle" aria-expanded="false" aria-controls="speech" title="Besarkan dialog Alya">Buka dialog</button></section></section></div><aside id="gameTasks" aria-label="Aktiviti misi"><div id="objective" class="mission-brief" aria-label="Arahan misi semasa"></div><aside id="cameraPanel" aria-label="Pratonton kamera untuk Misi 3" hidden><div class="camera-header"><strong>Pratonton Kamera</strong><span id="cameraIndicator">Kamera dimatikan</span></div><div id="cameraViewport"><video id="camera" aria-label="Paparan kamera secara langsung" autoplay muted playsinline hidden></video><div id="cameraPlaceholder"><span aria-hidden="true">📷</span><p>Kamera akan dipaparkan di sini selepas diaktifkan.</p></div></div><p id="cameraStatus" role="status">Gunakan tetikus atau sentuhan, atau aktifkan Kawalan Tangan.</p><div id="cameraControls"></div><p class="cameraPrivacy">Kamera hanya dibuka dengan izin. Video tidak dirakam.</p></aside><section id="activity"></section></aside><div id="gameActions"><section id="controls"></section></div></div></main><dialog id="modal"><button id="close">Tutup ×</button><div id="modalBody"></div></dialog><div id="toast" role="status"></div><script>
 const definition='Pertanian bandar ialah aktiviti bercucuk tanam di kawasan bandar dengan memanfaatkan ruang yang ada, seperti balkoni, halaman rumah, tanah lot dan kebun komuniti, untuk menghasilkan tanaman makanan. Penanaman boleh dijalankan secara konvensional atau menggunakan teknologi moden.';
 const places=[
 {id:'pangsa',name:'Rumah Pangsa',npc:'Kak Mira',topic:'Balkoni yang menghijau',text:'Saya menanam sawi dalam pasu di balkoni. Ruang kecil pun boleh menghasilkan makanan sendiri. Pilih bekas tanaman di balkoni untuk melihat tanaman kami.',items:[['Pasu sawi','Sawi ditanam dalam pasu berisi tanah. Ini contoh kaedah konvensional yang sesuai untuk ruang terhad.'],['Botol guna semula','Botol terpakai yang sesuai boleh dijadikan bekas tanaman. Penggunaan semula bahan membantu memelihara alam sekitar.']]},
