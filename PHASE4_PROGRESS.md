@@ -38,12 +38,24 @@ The repository's default branch was `feature/phase2-missions` at the beginning o
 - **Verification:** Local simulated desktop (1440×900), tablet (820×1180), iPad landscape (1024×768), mobile (390×844), and compact landscape (915×420) passed no horizontal overflow and no overlap between the Misi 3 selection tray, Alya bubble, or A/B/C drop targets. The locally simulated single-file page ran without page errors. This is not a real-device camera/voice test.
 - **User request:** Further Alya voice-dialogue redesign is deliberately **deferred**; language/voice selection, captions and current dialogue presentation remain unchanged in this repair.
 
+
+## Phase 4 B/E/F/G — implemented in this update
+- **B Science animation:** All four teaching stations now use differentiated moving particles and a 3–4-step synchronized `Ikuti Aliran Sistem` panel. `Sebelum` and `Seterusnya` jump between stages; `Jeda` and `Ulang Animasi` still control the same timeline. System 0 explicitly shows static solution with root uptake, system 1 a full pump–trough–return loop, aquaponics the fish-waste → nitrification (ammonia → nitrit → nitrat) → plant-uptake sequence, and self-watering the wick from water to medium and roots without a pump. A note explains that diagrams are schematic, not literal times or scales.
+- **E Learning cards:** `Buku Misi` now has navigable `Kad Ilmu`, `Lencana & Rekod` and `Rubrik PBD` tabs, unlockable illustrated cards, a five-badge passport with timestamps and the original response history. All prior notes/answers remain available and exportable.
+- **E PBD rubric:** Appended the five-item `Senarai Semak Pemerhatian` (RPH Lampiran 2) and manual 1–3 activity rubric for SP 7.1.1 and 7.1.2 (Lampiran 3). On the independent profile, teacher-entered scores, checks and notes persist and appear in `Laporan Pembelajaran`. The classroom profile shows rubric criteria but cannot assign a single computer's score to a whole class. Scores are activity-level evidence, **NOT automatic official DSKP TP**. New printable individual final worksheet aligns with Lampiran 4.
+- **F Save safety:** `normalizeProgress` migrates old profiles with blank rubric; validates new optional scores (1–3), observations and notes without creating badges or touching prior records. New game remains a separate reset action. `tests/science_pbd.test.cjs` and `tests/learning.test.cjs` added.
+- **G Curriculum:** RPH explicitly states `7.1.1 Menerangkan maksud pertanian bandar` and `7.1.2 Menjelaskan sistem penanaman secara takungan dalam pertanian bandar`. Final written challenges require a definition + one example and operation of two systems (circulating culture and self-watering). Activity rubric criterion matches the RPH's 1–3 descriptors; no drawing requirement for SP 7.1.3 has been added.
+- **Testing done:** Source bundle parses with JavaScript `new Function` and includes all five missions, Alya's original painter, the 16:9 canvas, the visible camera preview and voice controls. Nine isolated unit-style checks passed for four animated flow types, RPH PBD checklist, legacy state migration and manual-only scores. Whole-browser tests with physical hardware are still pending.
+
+## Deferred as requested
+**Category C:** No code change to Alya audio, voice selection, spoken dialogue or dialogue layout in this update. Real voice and camera checks remain on the final verification list.
+
 ## Remaining Phase 4 backlog
 - **A:** Further polish of map perspective, furniture, motion and pixel coherence; visually inspect all three new scenes at projector and phone sizes.
-- **B:** Fine-tune hotspot coordinates on real devices; improve the visual teaching of aquaponics microbes and capillary movement; test real hand gesture pinch on HTTPS.
+- **B:** New science step animations and written explanations implemented; fine-tune microbe/wick symbols, diagram hotspot coordinates and test real hand gesture pinch on HTTPS hardware.
 - **C:** A natural **recorded** ms-MY female voice is still pending: the existing asset manifest lists proposed files, not verified MP3 audio. Current browser voice output is best-effort and varies by device. Verify playback on desktop, iPad and Android/iOS; replace TTS with authorized recordings when available.
 - **D:** Recheck phone landscape vs portrait, tablet screen rotations, classroom projector readability, small-screen title/dialogue overlap and touch hotspots at actual device DPI. The integrated 16:9 layout is implemented but still requires real hardware regression.
-- **E:** Better illustrated Buku Misi, replay navigation and optional teacher assessment rubric; do not equate medals with PBD mastery.
+- **E:** New knowledge cards and manual teacher activity rubric implemented. Still refine visual print pagination, accessibility and real teacher workflow; do not equate lencana with official PBD TP.
 - **F:** Full save/replay verification and regression testing after merging; preserve user data and keep a new user's state empty.
 - **G:** Review terminology and accurate technical diagrams against the supplied textbook/DSKP. The new definition is an editorial clarification, not a verbatim textbook quotation.
 - **H:** Real-browser end-to-end testing on desktop, mobile and tablet; manual camera tests; GitHub Pages publication.
