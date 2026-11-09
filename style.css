@@ -175,3 +175,15 @@ header{max-width:1400px}
  #gameTasks #activity .final-diagrams{grid-template-columns:1fr}
 }
 @media (prefers-reduced-motion:reduce){#dialogue{transition:none}}
+
+
+/* Keep default dialogue compact so hot-spots at 28–32% height remain uncovered. */
+#dialogue:not(.expanded){max-height:23%;min-height:0}
+#dialogue:not(.expanded) #speech{-webkit-line-clamp:1;max-height:1.5em}
+#dialogue:not(.expanded) #listen{display:none}
+@media(max-width:780px){
+ #dialogue:not(.expanded){max-height:25%;width:min(65%,300px)}
+ #dialogue:not(.expanded) #portrait{width:25px;height:31px}
+ #dialogue:not(.expanded) .nameplate{margin:0 0 1px}
+}
+@media(max-width:440px){#dialogue:not(.expanded){width:min(69%,260px)}}
