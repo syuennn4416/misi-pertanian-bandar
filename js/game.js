@@ -14,6 +14,7 @@ let state=profiles[mode],hands=null,assemblyUI=null,flowCompleted=false;
 let scene='home',paused=false,simTime=0,last=0,speech='',speechID='',talking=false,review=false;
 const sound=new AudioDirector(()=>state,playing=>{talking=playing;$('#dialogue').classList.toggle('speaking',playing)},message=>{$('#voiceStatus').textContent=message});
 document.addEventListener('pointerdown',()=>sound.activate(),{passive:true});
+document.addEventListener('click',event=>{if(event.isTrusted&&event.target?.closest?.('button'))sound.effect('click')},true);
 document.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' ')sound.activate()});
 const art=renderer($('#world')),portrait=renderer($('#portrait'));
 const phase3=createPhase3({$,btn,spot,say,save,go,modal,esc,toast,award,answerForm,state:()=>state,time:()=>simTime,missionMenu,book,effect:kind=>sound.effect(kind)});
@@ -21,13 +22,12 @@ function save(){profiles[state.mode]=state;try{localStorage.setItem('misi-bandar
 function newGame(){const begin=()=>{const m=state.mode;state=freshProgress(m);state.started=true;profiles[m]=state;review=false;save();$('#modal').close();music();go('map')};if(state.started||state.answers.length||state.badges.length){modal('<h2>Mulakan permainan baharu?</h2><p>Hanya kemajuan mod ini akan dipadam. Eksport rekod melalui Buku Misi jika perlu. Mod lain tidak berubah.</p><button id="confirmNew">Ya, mula baharu</button><button id="cancelNew">Batal</button>');$('#confirmNew').onclick=begin;$('#cancelNew').onclick=()=>$('#modal').close()}else begin()}
 function toast(s){$('#toast').textContent=s;$('#toast').style.display='block';clearTimeout(toast.timer);toast.timer=setTimeout(()=>$('#toast').style.display='none',3500)}
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-function btn(text,fn,parent='#controls',cls=''){const b=document.createElement('button');b.textContent=text;b.className=cls;b.onclick=()=>{tone();fn()};$(parent).append(b);return b}
+function btn(text,fn,parent='#controls',cls=''){const b=document.createElement('button');b.textContent=text;b.className=cls;b.onclick=fn;$(parent).append(b);return b}
 function spot(text,x,y,fn){const b=btn(text,fn,'#spots','spot');b.style.left=x+'%';b.style.top=y+'%'}
 function modal(html){$('#modalBody').innerHTML=html;if(!$('#modal').open)$('#modal').showModal()}
 function stopVoice(){sound.stopVoice()}
 function say(text,id=''){speech=text;speechID=id;$('#speech').textContent=text;sound.present(text,id)}
 function speak(){sound.speak(speech,speechID,true)}
-function tone(){sound.effect('click')}
 function music(){sound.activate()}
 function unlock(id){if(!state.notes.includes(id))state.notes.push(id);save()}
 function go(next){if(next==='ending'&&![1,2,3,4,5].every(n=>state.badges.includes(n))){toast('Lengkapkan kelima-lima misi sebelum menamatkan permainan.');return}const required=/^repair[01]$/.test(next)||next==='gate4'?3:/^final[0-2]$/.test(next)?4:next==='ending'?5:0;if(required&&state.mode!=='kelas'&&!state.badges.includes(required)){toast('Selesaikan misi sebelumnya dahulu.');return}$('#assemblyBoard')?.remove();hands?.stop();hands=null;assemblyUI=null;$('#cameraPanel').hidden=true;$('#playWorkspace').classList.remove('camera-active');$('#camera').hidden=true;$('#cameraPlaceholder').hidden=false;$('#cameraControls').replaceChildren();$('#cameraIndicator').textContent='Kamera dimatikan';$('#activity').replaceChildren();stopVoice();scene=next;paused=false;simTime=0;if(next!=='home'&&!review){state.scene=next;state.started=true;save()}$('#spots').replaceChildren();$('#controls').replaceChildren();$('#title').innerHTML='';$('#objective').textContent='';$('#status').textContent=`${state.mode==='kelas'?'Mod Kelas':'Mod Kendiri'} · ${state.badges.length}/5 lencana`;
