@@ -12,7 +12,7 @@ let profiles={kendiri:freshProgress(),kelas:freshProgress('kelas')},mode='kendir
 try{({profiles,mode}=loadProfiles(localStorage))}catch{storageOK=false}
 let state=profiles[mode],hands=null,assemblyUI=null,flowCompleted=false;
 let scene='home',paused=false,simTime=0,last=0,speech='',speechID='',talking=false,review=false;
-const sound=new AudioDirector(()=>state,playing=>{talking=playing;$('#dialogue').classList.toggle('speaking',playing)},message=>{$('#voiceStatus').textContent=message;if($('#voicePreviewStatus'))$('#voicePreviewStatus').textContent=message});
+const sound=new AudioDirector(()=>state,playing=>{talking=playing;$('#dialogue').classList.toggle('speaking',playing)},message=>{$('#voiceStatus').textContent=message;$('#transcriptStatus').textContent=message;if($('#voicePreviewStatus'))$('#voicePreviewStatus').textContent=message});
 document.addEventListener('pointerdown',()=>sound.activate(),{passive:true});
 document.addEventListener('click',event=>{if(event.isTrusted&&event.target?.closest?.('button'))sound.effect('click')},true);
 document.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' ')sound.activate()});
@@ -26,8 +26,8 @@ function btn(text,fn,parent='#controls',cls=''){const b=document.createElement('
 function spot(text,x,y,fn){const b=btn(text,fn,'#spots','spot');b.style.left=x+'%';b.style.top=y+'%'}
 function modal(html){$('#modalBody').innerHTML=html;if(!$('#modal').open)$('#modal').showModal()}
 function stopVoice(){sound.stopVoice()}
-function say(text,id=''){speech=text;speechID=id;$('#speech').textContent=text;sound.present(text,id)}
-function collapseDialogue(){const d=$('#dialogue'),b=$('#dialogToggle');d.classList.remove('expanded');b.setAttribute('aria-expanded','false');b.textContent='Lihat lagi';b.title='Besarkan dialog Alya'}
+function say(text,id=''){speech=text;speechID=id;$('#speech').textContent=text;$('#transcriptText').textContent=text;sound.present(text,id)}
+function collapseDialogue(){const b=$('#dialogToggle');$('#dialogue').classList.remove('expanded');$('#dialogueTranscript').hidden=true;b.setAttribute('aria-expanded','false');b.textContent='Lihat lagi';b.title='Baca dialog penuh Alya di ruang aktiviti'}
 function speak(){sound.speak(speech,speechID,true)}
 function music(){sound.activate()}
 function unlock(id){if(!state.notes.includes(id))state.notes.push(id);save()}
@@ -176,7 +176,10 @@ function settings(){
  document.querySelectorAll('[data-vol]').forEach(el=>el.oninput=()=>{state.vol[el.dataset.vol]=Number(el.value);sound.sync();save()});
 }
 window.speechSynthesis?.addEventListener?.('voiceschanged',()=>{if($('#voiceLanguage'))refreshVoiceOptions()});
-$('#dialogToggle').onclick=()=>{const d=$('#dialogue'),b=$('#dialogToggle');const expanded=d.classList.toggle('expanded');b.setAttribute('aria-expanded',String(expanded));b.textContent=expanded?'Ringkaskan':'Lihat lagi';b.title=expanded?'Ringkaskan dialog Alya':'Besarkan dialog Alya'};
+$('#dialogToggle').onclick=()=>{const b=$('#dialogToggle'),panel=$('#dialogueTranscript'),open=panel.hidden;panel.hidden=!open;b.setAttribute('aria-expanded',String(open));b.textContent=open?'Tutup dialog':'Lihat lagi';b.title=open?'Tutup dialog penuh':'Baca dialog penuh Alya di ruang aktiviti';if(open)panel.scrollIntoView({block:'nearest',behavior:'smooth'})};
+$('#transcriptClose').onclick=collapseDialogue;
+$('#transcriptListen').onclick=speak;
+$('#transcriptPause').onclick=()=>{const button=$('#transcriptPause');if(sound.isVoicePaused()){sound.resumeVoice();button.textContent='Jeda Suara'}else{sound.pauseVoice();button.textContent='Sambung Suara'}};
 $('#home').onclick=()=>go('home');$('#book').onclick=book;$('#settings').onclick=settings;$('#close').onclick=()=>$('#modal').close();$('#listen').onclick=speak;
 function frame(t){const delta=Math.min((t-last)/1000,.1);last=t;if(!paused)simTime+=delta;if(phase3.draw(scene,simTime,$('#world'),art)){}else if(scene==='sim2')drawScience($('#world'),'aqua',simTime);else if(scene==='sim3'||scene==='flow')drawScience($('#world'),'self',simTime);else if(scene==='workshop')drawScience($('#world'),'self',0,state.assembly,true);else art.draw(scene,scene.startsWith('sim')?simTime:t/1000);if(/^sim[0-3]$/.test(scene)){
  const sys=Number(scene.at(-1));drawFlowOverlay($('#world'),sys,simTime);
