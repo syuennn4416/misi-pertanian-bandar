@@ -31,6 +31,13 @@ The repository's default branch was `feature/phase2-missions` at the beginning o
 - **Save:** The chosen language, voice and speed are saved per class/self-study profile and kept when starting a new game, without affecting badges or previous answers. Volume, music and sound effect preferences remain separate.
 - **Testing:** The audio regression test covers voice choice, Google id-ID, ms-MY, rate and no-wrong-voice fallback. Full browser/actual voice availability remains to be checked on each device.
 
+## Phase 4 UI repair — after 16:9 rollout
+- **Critical chocolate-coloured overlay fixed:** `#objective` was positioned with both `top` and `bottom`, causing a tall brown rectangle to cover nearly the entire map. Its existing mission text is now rendered as a compact light-green briefing in the right-hand `AKTIVITI MISI` sidebar (under the frame on portrait phones); it is never positioned over the canvas.
+- **Misi 3 touch/drag controls:** The component selection tray is now placed below the Alya dialogue but above the three target zones on wider screens. On narrow phones it sits at the bottom of the 16:9 canvas. Existing mouse, touch and optional hand controls remain.
+- **Additional D/F polish:** Longer response inputs are bounded to the sidebar, buttons have accessible focus indicators and phone-sized touch targets. CSS uses readable breaks rather than clipping words.
+- **Verification:** Local simulated desktop (1440×900), tablet (820×1180), iPad landscape (1024×768), mobile (390×844), and compact landscape (915×420) passed no horizontal overflow and no overlap between the Misi 3 selection tray, Alya bubble, or A/B/C drop targets. The locally simulated single-file page ran without page errors. This is not a real-device camera/voice test.
+- **User request:** Further Alya voice-dialogue redesign is deliberately **deferred**; language/voice selection, captions and current dialogue presentation remain unchanged in this repair.
+
 ## Remaining Phase 4 backlog
 - **A:** Further polish of map perspective, furniture, motion and pixel coherence; visually inspect all three new scenes at projector and phone sizes.
 - **B:** Fine-tune hotspot coordinates on real devices; improve the visual teaching of aquaponics microbes and capillary movement; test real hand gesture pinch on HTTPS.
