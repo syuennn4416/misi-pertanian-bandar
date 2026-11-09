@@ -16,7 +16,7 @@ const sound=new AudioDirector(()=>state,playing=>{talking=playing;$('#dialogue')
 document.addEventListener('pointerdown',()=>sound.activate(),{passive:true});
 document.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' ')sound.activate()});
 const art=renderer($('#world')),portrait=renderer($('#portrait'));
-const phase3=createPhase3({$,btn,spot,say,save,go,modal,esc,toast,award,answerForm,state:()=>state,time:()=>simTime,missionMenu,book});
+const phase3=createPhase3({$,btn,spot,say,save,go,modal,esc,toast,award,answerForm,state:()=>state,time:()=>simTime,missionMenu,book,effect:kind=>sound.effect(kind)});
 function save(){profiles[state.mode]=state;try{localStorage.setItem('misi-bandar-v2',JSON.stringify({mode:state.mode,profiles}))}catch{storageOK=false;toast('Simpanan tidak tersedia. Eksport rekod sebelum keluar.')}}
 function newGame(){const begin=()=>{const m=state.mode;state=freshProgress(m);state.started=true;profiles[m]=state;review=false;save();$('#modal').close();music();go('map')};if(state.started||state.answers.length||state.badges.length){modal('<h2>Mulakan permainan baharu?</h2><p>Hanya kemajuan mod ini akan dipadam. Eksport rekod melalui Buku Misi jika perlu. Mod lain tidak berubah.</p><button id="confirmNew">Ya, mula baharu</button><button id="cancelNew">Batal</button>');$('#confirmNew').onclick=begin;$('#cancelNew').onclick=()=>$('#modal').close()}else begin()}
 function toast(s){$('#toast').textContent=s;$('#toast').style.display='block';clearTimeout(toast.timer);toast.timer=setTimeout(()=>$('#toast').style.display='none',3500)}
@@ -80,7 +80,7 @@ function workshop(){
  video.hidden=true;placeholder.hidden=false;$('#cameraIndicator').textContent='Kamera dimatikan';
  $('#cameraStatus').textContent='Tetikus / Sentuhan tersedia. Aktifkan Kawalan Tangan untuk melihat kamera.';
  const board=$('#assemblyBoard');$('#stage').append(board);
- assemblyUI=mountAssembly(board,state.assembly,()=>{save();$('#runSimulation').disabled=state.assembly.length!==3},message=>$('#assemblyFeedback').textContent=message);
+ assemblyUI=mountAssembly(board,state.assembly,()=>{sound.effect('correct');save();$('#runSimulation').disabled=state.assembly.length!==3},message=>{if(message.startsWith('Belum tepat'))sound.effect('error');$('#assemblyFeedback').textContent=message});
  const run=btn('Jalankan Simulasi',()=>go('flow'));run.id='runSimulation';run.disabled=state.assembly.length!==3;
  btn('Pasang Semula',()=>{state.assembly=[];save();go('workshop')});
  btn('Kembali ke Pusat',()=>go('lab'));
