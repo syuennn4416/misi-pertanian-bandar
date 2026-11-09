@@ -155,7 +155,15 @@ function frame(t){const delta=Math.min((t-last)/1000,.1);last=t;if(!paused)simTi
  const sys=Number(scene.at(-1));drawFlowOverlay($('#world'),sys,simTime);
  const guide=$('#scienceGuide'),ix=stageIndex(sys,simTime),card=guide?.querySelector('[data-active-stage]');
  if(card&&Number(card.dataset.activeStage)!==ix){card.dataset.activeStage=ix;card.innerHTML='<strong>Langkah '+(ix+1)+' — '+esc(learningStages[sys][ix][0])+'</strong><p>'+esc(learningStages[sys][ix][1])+'</p>';guide.querySelectorAll('[data-guide-dot]').forEach((node,n)=>node.classList.toggle('active',n===ix))}
- }else if(scene==='flow')drawFlowOverlay($('#world'),3,simTime);
+ }else if(scene==='flow'){
+   drawFlowOverlay($('#world'),3,simTime);
+   const ix=stageIndex(3,simTime),g=$('#capillaryGuide'),active=g?.querySelector('[data-capillary-stage]');
+   if(active&&Number(active.dataset.capillaryStage)!==ix){
+    active.dataset.capillaryStage=ix;
+    active.innerHTML='<strong>Langkah '+(ix+1)+' — '+esc(learningStages[3][ix][0])+'</strong><p>'+esc(learningStages[3][ix][1])+'</p>';
+    g.querySelectorAll('[data-guide-dot]').forEach((el,i)=>el.classList.toggle('active',i===ix));
+   }
+  }
  if(scene==='flow'&&simTime>=6&&!flowCompleted){flowCompleted=true;state.simulationSeen=true;save();$('#explainLab').disabled=false;}if($('#stampAlya')){const stampArt=renderer($('#stampAlya'));stampArt.clear();stampArt.alya(40,50,t/1000,2.7,'stamp');}portrait.clear();portrait.alya(40,50,t/1000,2.7,talking?'talk':Math.floor(t/3000)%2?'wave':'idle');requestAnimationFrame(frame)}go('home');requestAnimationFrame(frame);
 function workshop(){
  say('Makmal Tani Pintar: pasang tiga komponen pada bekas. A ialah penanda aras air, B ialah saluran mengisi air, C menghubungkan ruang air dengan medium. Seret komponen atau pilih komponen kemudian sentuh ruang.','workshop');
@@ -204,4 +212,5 @@ function workshop(){
  btn('Kalibrasi Semula',()=>hands?.detector?hands.calibrate():status('Aktifkan Kawalan Tangan terlebih dahulu.'),'#cameraControls');
  btn('Cuba Semula Kamera',enableHand,'#cameraControls');
 }
-function flowScene(){if(state.assembly.length!==3){go('workshop');return}flowCompleted=state.simulationSeen;$('#objective').textContent='Ruang air → partikel kapilari → medium → akar';say('Bahan kapilari bersentuhan dengan air. Air naik melalui bahan ini ke medium melalui tindakan kapilari, tanpa pam. Perhatikan perjalanan air sebelum menerangkan fungsinya.','capillary-flow');const pause=btn('Jeda',()=>{paused=!paused;pause.textContent=paused?'Mainkan':'Jeda'});btn('Ulang Animasi',()=>{simTime=0;paused=false;pause.textContent='Jeda'});const explain=btn('Jelaskan Tindakan Kapilari',()=>answerForm('misi3','1. Apakah fungsi ruang partikel kapilari? 2. Bagaimanakah air bergerak dari takungan ke medium tanaman?',()=>award(3,'gate4')));explain.id='explainLab';explain.disabled=!flowCompleted;btn('Periksa Semula Komponen',()=>go('workshop'))}
+function flowScene(){if(state.assembly.length!==3){go('workshop');return}flowCompleted=state.simulationSeen;
+ $('#activity').innerHTML='<section id="capillaryGuide" class="science-guide" aria-label="Langkah tindakan kapilari"><h3>Tindakan Kapilari — Tanpa Pam</h3><div class="science-dots">'+learningStages[3].map((_,i)=>'<span data-guide-dot="'+i+'">'+(i+1)+'</span>').join('')+'</div><article data-capillary-stage="-1"></article><p class="science-disclaimer">Perhatikan air bergerak dari ruang takungan melalui bahan penyerap ke medium dan akar. Ini ialah rajah pembelajaran, bukan kelajuan sebenar.</p></section>';$('#objective').textContent='Ruang air → partikel kapilari → medium → akar';say('Bahan kapilari bersentuhan dengan air. Air naik melalui bahan ini ke medium melalui tindakan kapilari, tanpa pam. Perhatikan perjalanan air sebelum menerangkan fungsinya.','capillary-flow');const pause=btn('Jeda',()=>{paused=!paused;pause.textContent=paused?'Mainkan':'Jeda'});btn('Ulang Animasi',()=>{simTime=0;paused=false;pause.textContent='Jeda'});const explain=btn('Jelaskan Tindakan Kapilari',()=>answerForm('misi3','1. Apakah fungsi ruang partikel kapilari? 2. Bagaimanakah air bergerak dari takungan ke medium tanaman?',()=>award(3,'gate4')));explain.id='explainLab';explain.disabled=!flowCompleted;btn('Periksa Semula Komponen',()=>go('workshop'))}
