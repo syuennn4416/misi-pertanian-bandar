@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "start": "python3 -m http.server 8080 --bind 0.0.0.0",
-    "test": "node tests/audio.test.cjs && node tests/game.test.cjs && node tests/fallback.test.cjs && node tests/phase3.test.cjs && node tests/responsive_camera.test.cjs",
+    "test": "node tests/science_pbd.test.cjs && node tests/audio.test.cjs && node tests/game.test.cjs && node tests/fallback.test.cjs && node tests/phase3.test.cjs && node tests/responsive_camera.test.cjs",
     "build": "python3 scripts/bundle.py"
   }
 }
