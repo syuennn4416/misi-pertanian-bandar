@@ -257,3 +257,57 @@ header{max-width:1400px}
     min-height:28px;padding:3px 4px;flex:1 1 30%;font-size:clamp(9px,1.75vw,12px)
   }
 }
+
+
+/* Phase 4B — scientific stage-by-stage guide beside the four 16:9 diagrams. */
+.science-guide{width:100%;min-width:0;background:#f6f4d8;color:#265046;border:2px solid #82a88b;border-radius:10px;padding:10px;line-height:1.45;box-shadow:0 3px #163f3540}
+.science-guide h3{font-size:clamp(14px,1.2vw,18px);margin:0 0 8px}
+.science-guide .science-dots{display:flex;gap:5px;flex-wrap:wrap;margin:0 0 8px}
+.science-guide [data-guide-dot]{display:inline-grid;place-items:center;width:27px;height:27px;border:2px solid #76a18e;border-radius:50%;font-weight:900;font-size:13px;color:#48705b;background:#e4ead1}
+.science-guide [data-guide-dot].active{background:#337966;border-color:#e5c77b;color:#fff7dd}
+.science-guide [data-active-stage]{background:white;border-left:5px solid #45907f;padding:8px 10px;border-radius:6px;min-height:85px}
+.science-guide [data-active-stage] strong{display:block;font-size:clamp(12px,1vw,16px)}
+.science-guide [data-active-stage] p{font-size:clamp(12px,1vw,15px);margin:5px 0 0!important}
+.science-guide .science-disclaimer{font-size:11px;line-height:1.4;margin:8px 0!important;color:#536f64}
+.science-guide .science-navigation{display:flex;gap:6px}
+#gameTasks #activity .science-navigation button{min-height:40px;width:50%;flex:1;font-size:clamp(11px,1vw,13px);text-align:center;padding:6px!important;white-space:normal}
+/* Phase 4E — interactive learning booklet and manual teacher rubric. */
+.mission-book{width:100%;max-width:950px;margin:auto}
+.mission-book h2{margin:0 0 10px}
+.book-tabs{display:flex;flex-wrap:wrap;gap:7px;margin:12px 0 16px}
+.book-tabs button{flex:1 1 170px;min-height:45px;background:#e5ebd5;font-weight:700}
+.book-tabs button.active{background:#386e5d;color:#fff6d9;border-color:#efc977;box-shadow:0 3px #204c40}
+.book-section-head{border-left:6px solid #5b9878;background:#eff5d9;padding:11px 14px;border-radius:7px;margin-bottom:12px}
+.book-section-head h3{margin:0 0 4px;font-size:clamp(17px,1.8vw,23px)}
+.book-section-head p{margin:0;font-size:14px}
+.knowledge-grid,.badge-grid,.rubric-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:12px 0 18px}
+.knowledge-card{border:3px solid #8db18c;background:#fcf6df;color:#2d5244;border-radius:12px;padding:13px;box-shadow:0 4px 0 #a4b58d;min-width:0}
+.knowledge-card header{display:flex;align-items:center;gap:9px;max-width:none;padding:0;margin:0 0 8px;background:transparent;color:#2c5e4c;font-size:clamp(15px,1.25vw,19px)}
+.knowledge-card header span{font-size:23px}
+.knowledge-card p{white-space:pre-wrap;line-height:1.55;overflow-wrap:anywhere;margin:0;font-size:14px}
+.badge-tile{border:3px dashed #bcc4a7;border-radius:10px;background:#eeeee1;text-align:center;padding:12px 10px;opacity:.83;color:#526352}
+.badge-tile.collected{opacity:1;background:#f9ecc5;border:3px solid #d4a55c;color:#745137}
+.badge-tile>span{font-size:32px;display:block}
+.badge-tile strong{display:block;font-size:15px}
+.badge-tile p{margin:5px 0}
+.badge-tile small{font-size:12px}
+.book-history{display:grid;gap:8px}
+.book-history article{border-left:5px solid #98ac8b;background:#f2f4e8;padding:10px 12px;border-radius:6px}
+.book-history small{display:block;color:#57705b;margin-top:3px;font-size:12px}
+.book-history p{white-space:pre-wrap;overflow-wrap:anywhere}
+.book-note{font-size:13px;line-height:1.55;color:#4c6557;padding:10px 12px;background:#eef2e5;border:1px solid #b2c3b0;border-radius:6px}
+.rubric-card{background:#f6f3de;border:2px solid #b3c49e;border-radius:10px;padding:12px;line-height:1.5}
+.rubric-card h4{font-size:16px;margin:0 0 8px}
+.rubric-card p{font-size:13px;margin:9px 0}
+#teacherRubric{padding:14px;background:#eaf2df;border:2px solid #99b49a;border-radius:12px}
+#teacherRubric label{display:grid;gap:7px;margin:12px 0;font-weight:600;line-height:1.35}
+#teacherRubric select,#teacherRubric textarea{width:100%;max-width:100%;border:2px solid #a1b6a3;border-radius:7px;padding:9px;min-height:44px;background:white;color:#244e3b;font:inherit}
+#teacherRubric textarea{min-height:95px}
+#teacherRubric button{min-height:44px;background:#ffe9a5}
+.book-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
+.book-actions button{flex:1 1 190px;min-height:44px;font-size:14px;padding:9px}
+.pbd-print-table{border-collapse:collapse;width:100%;margin:12px 0}
+.pbd-print-table td,.pbd-print-table th{border:1px solid #9cae9a;padding:8px;text-align:left;font-size:13px}
+.worksheet .answer-lines{height:100px;margin:12px 0;background:repeating-linear-gradient(to bottom,transparent 0 28px,#a8bbaa 29px,#a8bbaa 30px)}
+@media(max-width:650px){.knowledge-grid,.rubric-grid{grid-template-columns:1fr}.badge-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.book-tabs button{flex:1 1 130px}.science-guide [data-active-stage]{min-height:0}.book-actions button{flex:1 1 150px}}
+@media print{.book-tabs,.book-actions{display:none!important}.worksheet .answer-lines{height:110px}}
