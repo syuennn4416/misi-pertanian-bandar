@@ -6,7 +6,7 @@ export class AudioDirector {
   this.activated=false; this.ctx=null; this.musicBus=null; this.fxBus=null;
   this.musicTimer=null; this.nextStepAt=0; this.step=0; this.ducked=false;
   this.voiceToken=0; this.currentAudio=null; this.utterance=null; this.speaking=false;
-  this.missingRecordings=new Set(); this.lastText=''; this.lastId='';
+  this.missingRecordings=new Set(); this.lastText=''; this.lastId=''; this.voicePaused=false;this.pendingVoices=false;
  }
  activate() {
   this.activated=true;
@@ -71,9 +71,13 @@ export class AudioDirector {
   }
  }
  _isCurrent(token){return token===this.voiceToken}
- _markSpeaking(v){this.speaking=v;this.ducked=v;this.onSpeaking(v);this.sync()}
+ _markSpeaking(v){this.speaking=v;if(!v)this.voicePaused=false;this.ducked=v;this.onSpeaking(v);this.sync()}
+ isVoicePaused(){return this.voicePaused}
+ pauseVoice(){if(!this.speaking||this.voicePaused){this.onStatus('Tiada bacaan aktif untuk dijeda.');return}try{if(this.currentAudio)this.currentAudio.pause();else window.speechSynthesis?.pause();this.voicePaused=true;this.onStatus('Suara dijeda. Klik Sambung Suara.')}catch{this.onStatus('Pelayar ini tidak menyokong jeda suara.')}}
+ resumeVoice(){if(!this.voicePaused)return;try{if(this.currentAudio)this.currentAudio.play().catch(()=>{});else window.speechSynthesis?.resume();this.voicePaused=false;this.onStatus('Suara disambung.')}catch{this.onStatus('Sila tekan Dengar Semula.')}}
+ tryPendingVoices(){if(!this.pendingVoices||!this.activated||this.getPrefs().muted||this.getPrefs().autoVoice===false)return;const voice=this.selectedVoice();if(voice&&this.lastText){this.pendingVoices=false;this.nativeSpeech(this.lastText,this.voiceToken,voice)}}
  stopVoice(){
-  this.voiceToken++;
+  this.voiceToken++;this.pendingVoices=false;this.voicePaused=false;
   try{window.speechSynthesis?.cancel()}catch{}
   if(this.currentAudio){this.currentAudio.onended=null;this.currentAudio.onerror=null;this.currentAudio.pause();this.currentAudio=null}
   this.utterance=null;
@@ -125,7 +129,8 @@ export class AudioDirector {
   if(!text){this.onStatus('Tiada dialog untuk dibaca.');return}
   const voice=this.selectedVoice();
   if(!voice){
-   this.onStatus('Suara pilihan tidak tersedia pada peranti ini. Buka Tetapan untuk memilih bahasa dan suara lain. Sari kata masih tersedia.');
+   this.pendingVoices=!manual&&this.availableVoices().length===0;
+   this.onStatus(this.pendingVoices?'Senarai suara sedang dimuatkan. Sari kata boleh dibaca.':'Suara pilihan tidak tersedia pada peranti ini. Buka Tetapan untuk memilih bahasa dan suara lain. Sari kata masih tersedia.');
    return
   }
   this.nativeSpeech(text,this.voiceToken,voice);
@@ -139,7 +144,7 @@ export class AudioDirector {
    const p=this.getPrefs(),u=new window.SpeechSynthesisUtterance(text);
    u.voice=voice;u.lang=voice.lang||p.voiceLanguage||'id-ID';
    u.rate=Math.min(1.5,Math.max(.65,Number(p.voiceRate)||1.1));
-   u.pitch=1;u.volume=p.vol?.voice??.8;
+   u.pitch=Math.min(1.3,Math.max(.8,Number(p.voicePitch)||1));u.volume=p.vol?.voice??.8;
    this.utterance=u;
    u.onstart=()=>{if(this._isCurrent(token)){this._markSpeaking(true);this.onStatus('Alya sedang bercakap menggunakan '+voice.name+' ('+u.lang+').')}}
    u.onend=()=>{if(this._isCurrent(token)){this.utterance=null;this._markSpeaking(false);this.onStatus('Bacaan selesai. Tekan Dengar Semula untuk ulang.')}}
