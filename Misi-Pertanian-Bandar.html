@@ -11,7 +11,55 @@
 .part-hotspot{min-width:28px;width:30px;height:30px;padding:1px;border-radius:50%;font-size:14px;font-weight:900;background:#fff2a8;border-color:#385e55;box-shadow:0 2px #64513e;z-index:3}
 .part-hotspot:hover,.part-hotspot:focus-visible{background:#fffbd7;outline:2px solid #f5c359}
 @media(max-width:600px){.part-hotspot{min-width:24px;width:26px;height:26px;font-size:12px}}
-</style><body><header><button id="home">⌂ <span>Bandar Hijau</span></button><span id="status">RBT • Tahun 5</span><button id="book">Buku Misi</button><button id="settings">Tetapan</button></header><main><section id="stage"><canvas id="world" width="640" height="360" aria-label="Bandar piksel interaktif"></canvas><div id="spots"></div><div id="title"></div><div id="objective"></div></section><section id="dialogue"><canvas id="portrait" width="80" height="96"></canvas><div class="dialogue-box"><strong class="nameplate">ALYA <small>Rakan penerokaan kamu</small></strong><p id="speech"></p><button id="listen">Dengar Semula</button><span id="voiceStatus"></span></div></section><section id="activity"></section><section id="controls"></section></main><dialog id="modal"><button id="close">Tutup ×</button><div id="modalBody"></div></dialog><div id="toast" role="status"></div><script>
+
+/* Phase 4 camera and responsive layout. Keep Alya and core Canvas artwork unchanged. */
+main{max-width:1360px;width:100%;padding:0 clamp(8px,2vw,20px) 30px}
+header{max-width:1400px}
+#playWorkspace{display:grid;grid-template-columns:minmax(0,1fr);gap:16px;align-items:start}
+#playWorkspace.camera-active{grid-template-columns:minmax(0,1fr) minmax(255px,330px)}
+#stage{width:100%;min-width:0;aspect-ratio:16/9}
+#cameraPanel{min-width:0;border:3px solid #d8b681;background:#f4e2b7;color:#473a2d;border-radius:9px;padding:12px;box-shadow:0 5px 0 #78523c}
+#cameraPanel[hidden],#camera[hidden],#cameraPlaceholder[hidden]{display:none!important}
+.camera-header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.camera-header strong{font-size:clamp(17px,1.5vw,21px)}
+#cameraIndicator{border-radius:4px;padding:4px 7px;background:#edc989;color:#493421;font-size:12px}
+#cameraViewport{position:relative;aspect-ratio:4/3;width:100%;max-width:460px;margin:auto;background:#183b36;border:3px solid #826448;border-radius:6px;overflow:hidden}
+#camera{display:block;width:100%;height:100%;object-fit:cover;transform:scaleX(-1);box-shadow:none}
+#cameraPlaceholder{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;height:100%;padding:14px;text-align:center;color:#f8f0d3}
+#cameraPlaceholder span{font-size:32px}
+#cameraPlaceholder p{font-size:14px;line-height:1.4;margin:0}
+#cameraStatus{font-size:14px;line-height:1.5;min-height:42px;margin:10px 0;overflow-wrap:anywhere}
+#cameraControls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+#cameraControls button{min-width:0;min-height:44px;padding:9px 6px;font-size:clamp(12px,1vw,14px);overflow-wrap:anywhere}
+.cameraPrivacy{font-size:12px;color:#574834;margin:10px 0 0;line-height:1.4}
+#controls{margin-left:0;gap:10px}
+#controls button,#activity button{min-height:44px}
+#dialogue{max-width:1100px;margin-left:auto;margin-right:auto}
+#activity{max-width:1250px;margin-left:auto;margin-right:auto}
+#playWorkspace.camera-active+#dialogue{margin-top:18px}
+@media(max-width:1000px){
+ #playWorkspace.camera-active{grid-template-columns:minmax(0,1fr)}
+ #cameraPanel{width:100%;max-width:520px;margin:0 auto}
+ #cameraViewport{max-width:380px}
+ #cameraControls button{font-size:14px}
+}
+@media(max-width:600px){
+ main{padding:0 8px 20px}
+ #playWorkspace{gap:11px}
+ #cameraPanel{padding:10px}
+ #cameraViewport{max-width:300px}
+ .camera-header strong{font-size:17px}
+ #controls{margin-left:0}
+ #controls button,#activity button{min-height:44px;max-width:100%}
+ #cameraStatus{font-size:13px}
+ #objective{font-size:clamp(11px,2.8vw,14px)}
+ .spot{font-size:clamp(10px,2.7vw,13px)}
+}
+@media(min-width:601px) and (max-width:850px){
+ #dialogue{grid-template-columns:115px minmax(0,1fr);min-height:165px}
+ #portrait{width:115px;height:138px}
+}
+</style><body><header><button id="home">⌂ <span>Bandar Hijau</span></button><span id="status">RBT • Tahun 5</span><button id="book">Buku Misi</button><button id="settings">Tetapan</button></header><main><div id="playWorkspace"><section id="stage"><canvas id="world" width="640" height="360" aria-label="Bandar piksel interaktif"></canvas><div id="spots"></div><div id="title"></div><div id="objective"></div></section><aside id="cameraPanel" aria-label="Pratonton kamera untuk Misi 3" hidden><div class="camera-header"><strong>Pratonton Kamera</strong><span id="cameraIndicator">Kamera dimatikan</span></div><div id="cameraViewport"><video id="camera" aria-label="Paparan kamera secara langsung" autoplay muted playsinline hidden></video><div id="cameraPlaceholder"><span aria-hidden="true">📷</span><p>Kamera akan dipaparkan di sini selepas diaktifkan.</p></div></div><p id="cameraStatus" role="status">Gunakan tetikus atau sentuhan, atau aktifkan Kawalan Tangan.</p><div id="cameraControls"></div><p class="cameraPrivacy">Kamera hanya dibuka dengan izin. Video tidak dirakam.</p></aside></div><section id="dialogue"><canvas id="portrait" width="80" height="96"></canvas><div class="dialogue-box"><strong class="nameplate">ALYA <small>Rakan penerokaan kamu</small></strong><p id="speech"></p><button id="listen">Dengar Semula</button><span id="voiceStatus"></span></div></section><section id="activity"></section><section id="controls"></section></main><dialog id="modal"><button id="close">Tutup ×</button><div id="modalBody"></div></dialog><div id="toast" role="status"></div><script>
 const definition='Pertanian bandar ialah aktiviti bercucuk tanam di kawasan bandar dengan memanfaatkan ruang yang ada, seperti balkoni, halaman rumah, tanah lot dan kebun komuniti, untuk menghasilkan tanaman makanan. Penanaman boleh dijalankan secara konvensional atau menggunakan teknologi moden.';
 const places=[
 {id:'pangsa',name:'Rumah Pangsa',npc:'Kak Mira',topic:'Balkoni yang menghijau',text:'Saya menanam sawi dalam pasu di balkoni. Ruang kecil pun boleh menghasilkan makanan sendiri. Pilih bekas tanaman di balkoni untuk melihat tanaman kami.',items:[['Pasu sawi','Sawi ditanam dalam pasu berisi tanah. Ini contoh kaedah konvensional yang sesuai untuk ruang terhad.'],['Botol guna semula','Botol terpakai yang sesuai boleh dijadikan bekas tanaman. Penggunaan semula bahan membantu memelihara alam sekitar.']]},
@@ -275,7 +323,7 @@ function speak(){stopVoice();if(state.muted){toast('Audio dibisukan dalam Tetapa
 function tone(freq=620){if(state.muted)return;try{ctx??=new AudioContext();ctx.resume();const o=ctx.createOscillator(),g=ctx.createGain();o.type='sine';o.frequency.value=freq;g.gain.setValueAtTime(state.vol.sfx*.08,ctx.currentTime);g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+.15);o.connect(g).connect(ctx.destination);o.start();o.stop(ctx.currentTime+.16)}catch{}}
 function music(){try{ctx??=new AudioContext();ctx.resume();if(musicGain)return;musicGain=ctx.createGain();musicGain.gain.value=state.muted?0:state.vol.music*.08;musicGain.connect(ctx.destination);[261.63,329.63,392].forEach(f=>{const o=ctx.createOscillator();o.type='sine';o.frequency.value=f;o.connect(musicGain);o.start()})}catch{}}
 function unlock(id){if(!state.notes.includes(id))state.notes.push(id);save()}
-function go(next){if(next==='ending'&&![1,2,3,4,5].every(n=>state.badges.includes(n))){toast('Lengkapkan kelima-lima misi sebelum menamatkan permainan.');return}const required=/^repair[01]$/.test(next)||next==='gate4'?3:/^final[0-2]$/.test(next)?4:next==='ending'?5:0;if(required&&state.mode!=='kelas'&&!state.badges.includes(required)){toast('Selesaikan misi sebelumnya dahulu.');return}$('#assemblyBoard')?.remove();hands?.stop();hands=null;assemblyUI=null;$('#activity').replaceChildren();stopVoice();scene=next;paused=false;simTime=0;if(next!=='home'&&!review){state.scene=next;state.started=true;save()}$('#spots').replaceChildren();$('#controls').replaceChildren();$('#title').innerHTML='';$('#objective').textContent='';$('#status').textContent=`${state.mode==='kelas'?'Mod Kelas':'Mod Kendiri'} · ${state.badges.length}/5 lencana`;
+function go(next){if(next==='ending'&&![1,2,3,4,5].every(n=>state.badges.includes(n))){toast('Lengkapkan kelima-lima misi sebelum menamatkan permainan.');return}const required=/^repair[01]$/.test(next)||next==='gate4'?3:/^final[0-2]$/.test(next)?4:next==='ending'?5:0;if(required&&state.mode!=='kelas'&&!state.badges.includes(required)){toast('Selesaikan misi sebelumnya dahulu.');return}$('#assemblyBoard')?.remove();hands?.stop();hands=null;assemblyUI=null;$('#cameraPanel').hidden=true;$('#playWorkspace').classList.remove('camera-active');$('#camera').hidden=true;$('#cameraPlaceholder').hidden=false;$('#cameraControls').replaceChildren();$('#cameraIndicator').textContent='Kamera dimatikan';$('#activity').replaceChildren();stopVoice();scene=next;paused=false;simTime=0;if(next!=='home'&&!review){state.scene=next;state.started=true;save()}$('#spots').replaceChildren();$('#controls').replaceChildren();$('#title').innerHTML='';$('#objective').textContent='';$('#status').textContent=`${state.mode==='kelas'?'Mod Kelas':'Mod Kendiri'} · ${state.badges.length}/5 lencana`;
 if(next==='home'){review=false;$('#title').innerHTML='<span class="eyebrow">PENGEMBARAAN RBT • TAHUN 5</span><h1>Misi Pertanian<br>Bandar</h1><p>Jelajah Sistem Penanaman Secara Takungan</p>';$('#objective').textContent='Selamat datang ke Bandar Hijau · Fasa 3';say('Hai, saya Alya! Ruang rumah kita kecil, tetapi impian kebun kita besar. Mari bantu jiran meneroka pertanian bandar.','intro');btn('Mula Permainan Baharu',newGame,'#controls','primary');btn('Sambung Permainan',()=>{music();review=false;go(state.scene||'map')}).disabled=!state.started;btn('Pilih Misi / Main Semula',missionMenu);btn('Buku Misi Pertanian',book);btn('Mod Ulang Kaji',()=>{review=true;go('lab')});btn('Tetapan',settings)}
 else if(next==='map'){say('Jiran kita mahu menanam sayur, tetapi ruang rumah terhad. Terokai tiga tempat dan periksa dua objek di setiap tempat. Kemudian ceritakan penemuan kamu.','map');$('#objective').textContent=`Misi 1 · Misteri Pertanian Bandar · ${places.filter(p=>p.items.every((_,i)=>state.visited.includes(p.id+i))).length}/3 tempat diterokai`;spot('Rumah Pangsa',19,49,()=>go('pangsa'));spot('Rumah Teres',73,51,()=>go('teres'));spot('Kebun Komuniti',22,91,()=>go('kebun'));spot(state.badges.length?'Pusat Teknologi':'Pusat Teknologi · terkunci',72,91,()=>state.badges.length||state.mode==='kelas'?go('lab'):toast('Lengkapkan Misi 1 untuk membuka pusat teknologi.'));btn('Catat Penemuan',answer1,'#controls','primary');btn('Petunjuk',()=>{state.hints.push({mission:1,time:Date.now()});save();say(definition+' Contohnya, sawi ditanam dalam pasu di balkoni rumah pangsa.','definition')});btn('Pilih Misi',missionMenu)}
 else if(places.some(p=>p.id===next)){const p=places.find(p=>p.id===next);say(`${p.npc}: ${p.text}`,p.id);$('#objective').textContent='Misi 1 · '+p.topic;for(let i=0;i<2;i++)spot((state.visited.includes(p.id+i)?'✓ ':'')+p.items[i][0],i?71:25,i?49:73,()=>{if(!state.visited.includes(p.id+i))state.visited.push(p.id+i);unlock(p.id);go(p.id);say(`${p.npc}: ${p.items[i][1]}`,p.id+'-'+i)});btn('Kembali ke Bandar',()=>go('map'),'#controls','primary')}
@@ -299,18 +347,51 @@ function settings(){modal(`<h2>Tetapan</h2><label>Mod permainan <select id="mode
 $('#home').onclick=()=>go('home');$('#book').onclick=book;$('#settings').onclick=settings;$('#close').onclick=()=>$('#modal').close();$('#listen').onclick=speak;
 function frame(t){const delta=Math.min((t-last)/1000,.1);last=t;if(!paused)simTime+=delta;if(phase3.draw(scene,simTime,$('#world'),art)){}else if(scene==='sim2')drawScience($('#world'),'aqua',simTime);else if(scene==='sim3'||scene==='flow')drawScience($('#world'),'self',simTime);else if(scene==='workshop')drawScience($('#world'),'self',0,state.assembly,true);else art.draw(scene,scene.startsWith('sim')?simTime:t/1000);if(scene==='flow'&&simTime>=6&&!flowCompleted){flowCompleted=true;state.simulationSeen=true;save();$('#explainLab').disabled=false;}if($('#stampAlya')){const stampArt=renderer($('#stampAlya'));stampArt.clear();stampArt.alya(40,50,t/1000,2.7,'stamp');}portrait.clear();portrait.alya(40,50,t/1000,2.7,talking?'talk':Math.floor(t/3000)%2?'wave':'idle');requestAnimationFrame(frame)}go('home');requestAnimationFrame(frame);
 function workshop(){
- say('Makmal Tani Pintar: pasang tiga komponen pada bekas. A ialah penanda aras air, B ialah saluran mengisi air, C menghubungkan ruang air dengan medium. Seret komponen atau pilih komponen kemudian sentuh ruang.','workshop');$('#objective').textContent='Misi 3 · Pasang tiga komponen';
- $('#activity').innerHTML='<div id="assemblyBoard"></div><p id="assemblyFeedback" role="status">Pilih komponen dan letakkan pada ruang yang sesuai.</p><div id="cameraControls"></div><video id="camera" muted playsinline hidden></video><p id="cameraStatus" role="status">Tetikus / Sentuhan aktif. Kamera belum dihidupkan.</p>';
- // Board is over the cutaway; large targets use the same normalized coordinates.
+ say('Makmal Tani Pintar: pasang tiga komponen pada bekas. A ialah penanda aras air, B ialah saluran mengisi air, C menghubungkan ruang air dengan medium. Seret komponen atau pilih komponen kemudian sentuh ruang.','workshop');
+ $('#objective').textContent='Misi 3 · Pasang tiga komponen';
+ $('#activity').innerHTML='<div id="assemblyBoard"></div><p id="assemblyFeedback" role="status">Pilih komponen dan letakkan pada ruang yang sesuai.</p>';
+ const panel=$('#cameraPanel'),video=$('#camera'),placeholder=$('#cameraPlaceholder');
+ panel.hidden=false;$('#playWorkspace').classList.add('camera-active');
+ video.hidden=true;placeholder.hidden=false;$('#cameraIndicator').textContent='Kamera dimatikan';
+ $('#cameraStatus').textContent='Tetikus / Sentuhan tersedia. Aktifkan Kawalan Tangan untuk melihat kamera.';
  const board=$('#assemblyBoard');$('#stage').append(board);
- assemblyUI=mountAssembly(board,state.assembly,()=>{save();$('#runSimulation').disabled=state.assembly.length!==3},s=>$('#assemblyFeedback').textContent=s);
+ assemblyUI=mountAssembly(board,state.assembly,()=>{save();$('#runSimulation').disabled=state.assembly.length!==3},message=>$('#assemblyFeedback').textContent=message);
  const run=btn('Jalankan Simulasi',()=>go('flow'));run.id='runSimulation';run.disabled=state.assembly.length!==3;
- btn('Pasang Semula',()=>{state.assembly=[];save();go('workshop')});btn('Kembali ke Pusat',()=>go('lab'));
- const status=s=>{if($('#cameraStatus'))$('#cameraStatus').textContent=s};
- btn('Kawalan Tangan',()=>{hands?.stop();$('#camera').hidden=false;hands=new HandControl($('#camera'),status,(x,y,phase)=>{if(!assemblyUI)return;if(phase==='lost'){assemblyUI.hide();return}const box=board.getBoundingClientRect();assemblyUI.hand(x*box.width,y*box.height,phase)});hands.start()},'#cameraControls');
- btn('Tetikus / Sentuhan',()=>{hands?.stop();assemblyUI?.hide();$('#camera').hidden=true;status('Tetikus / Sentuhan aktif. Kamera dimatikan.')},'#cameraControls');
- btn('Kalibrasi Semula',()=>hands?.detector?hands.calibrate():status('Hidupkan Kawalan Tangan dahulu.'),'#cameraControls');
- btn('Cuba Semula Kamera',()=>{if(hands)hands.start();else status('Pilih Kawalan Tangan untuk memberi kebenaran kamera.')},'#cameraControls');
+ btn('Pasang Semula',()=>{state.assembly=[];save();go('workshop')});
+ btn('Kembali ke Pusat',()=>go('lab'));
+ const status=message=>{
+   $('#cameraStatus').textContent=message;
+   if(message.startsWith('Kamera tidak tersedia')||message.startsWith('Pengecaman terhenti')){
+     video.hidden=true;placeholder.hidden=false;$('#cameraIndicator').textContent='Kamera tidak tersedia';
+   }else if(message.includes('Sedia.')){
+     $('#cameraIndicator').textContent='Tangan dikesan';
+   }else if(message.includes('Kalibrasi')||message.includes('Meminta kamera')||message.includes('Memuatkan')){
+     $('#cameraIndicator').textContent='Memulakan kamera…';
+   }else if(message.includes('Tangan tidak dikesan')){
+     $('#cameraIndicator').textContent='Cari tangan';
+   }
+ };
+ const enableHand=()=>{
+   hands?.stop();
+   video.hidden=false;placeholder.hidden=true;
+   $('#cameraIndicator').textContent='Memulakan kamera…';
+   hands=new HandControl(video,status,(x,y,phase)=>{
+     if(!assemblyUI)return;
+     if(phase==='lost'){assemblyUI.hide();return}
+     const box=board.getBoundingClientRect();
+     assemblyUI.hand(x*box.width,y*box.height,phase)
+   });
+   hands.start();
+ };
+ btn('Kawalan Tangan',enableHand,'#cameraControls');
+ btn('Tetikus / Sentuhan',()=>{
+   hands?.stop();hands=null;assemblyUI?.hide();
+   video.hidden=true;placeholder.hidden=false;
+   $('#cameraIndicator').textContent='Kamera dimatikan';
+   status('Tetikus / Sentuhan aktif. Kamera dimatikan.');
+ },'#cameraControls');
+ btn('Kalibrasi Semula',()=>hands?.detector?hands.calibrate():status('Aktifkan Kawalan Tangan terlebih dahulu.'),'#cameraControls');
+ btn('Cuba Semula Kamera',enableHand,'#cameraControls');
 }
 function flowScene(){if(state.assembly.length!==3){go('workshop');return}flowCompleted=state.simulationSeen;$('#objective').textContent='Ruang air → partikel kapilari → medium → akar';say('Bahan kapilari bersentuhan dengan air. Air naik melalui bahan ini ke medium melalui tindakan kapilari, tanpa pam. Perhatikan perjalanan air sebelum menerangkan fungsinya.','capillary-flow');const pause=btn('Jeda',()=>{paused=!paused;pause.textContent=paused?'Mainkan':'Jeda'});btn('Ulang Animasi',()=>{simTime=0;paused=false;pause.textContent='Jeda'});const explain=btn('Jelaskan Tindakan Kapilari',()=>answerForm('misi3','1. Apakah fungsi ruang partikel kapilari? 2. Bagaimanakah air bergerak dari takungan ke medium tanaman?',()=>award(3,'gate4')));explain.id='explainLab';explain.disabled=!flowCompleted;btn('Periksa Semula Komponen',()=>go('workshop'))}
 
