@@ -122,7 +122,7 @@ export class AudioDirector {
    this._markSpeaking(false);this.onStatus('Suara ms-MY tidak tersedia. Baca sari kata atau sediakan fail rakaman.');return
   }
   try{
-   const u=new SpeechSynthesisUtterance(text);
+   const u=new window.SpeechSynthesisUtterance(text);
    u.lang='ms-MY';u.rate=.94;u.pitch=1.06;u.volume=this.getPrefs().vol?.voice??.8;
    if(voice)u.voice=voice;
    this.utterance=u;
