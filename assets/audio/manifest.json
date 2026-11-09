@@ -1,0 +1,102 @@
+{
+  "locale": "ms-MY",
+  "speaker": "Wanita Malaysia, mesra dan jelas",
+  "recordings": [
+    {
+      "file": "intro.mp3",
+      "text": "Hai, saya Alya! Ruang rumah kita kecil, tetapi impian kebun kita besar. Mari bantu jiran meneroka pertanian bandar."
+    },
+    {
+      "file": "map.mp3",
+      "text": "Jiran kita mahu menanam sayur, tetapi ruang rumah terhad. Terokai tiga tempat dan periksa dua objek di setiap tempat. Kemudian ceritakan penemuan kamu."
+    },
+    {
+      "file": "definition.mp3",
+      "text": "Pertanian bandar ialah aktiviti bercucuk tanam untuk menghasilkan tanaman makanan di sekitar rumah yang mempunyai ruang terhad. Penanaman boleh dijalankan secara konvensional atau menggunakan teknologi moden. Contohnya, sawi ditanam dalam pasu di balkoni rumah pangsa."
+    },
+    {
+      "file": "lab.mp3",
+      "text": "Selamat datang ke Pusat Teknologi Pertanian! Periksa komponen dua sistem kultur air. Bandingkan larutan yang statik dengan larutan yang dikitar semula."
+    },
+    {
+      "file": "congrats.mp3",
+      "text": "Tahniah! Kamu telah meneroka tiga kawasan dan mencatat penemuan. Kamu kini Peneroka Pertanian Bandar!"
+    },
+    {
+      "file": "pangsa.mp3",
+      "text": "Kak Mira: Saya menanam sawi dalam pasu di balkoni. Ruang kecil pun boleh menghasilkan makanan sendiri. Pilih bekas tanaman di balkoni untuk melihat tanaman kami."
+    },
+    {
+      "file": "pangsa-0.mp3",
+      "text": "Kak Mira: Sawi ditanam dalam pasu berisi tanah. Ini contoh kaedah konvensional yang sesuai untuk ruang terhad."
+    },
+    {
+      "file": "pangsa-1.mp3",
+      "text": "Kak Mira: Botol terpakai yang sesuai boleh dijadikan bekas tanaman. Penggunaan semula bahan membantu memelihara alam sekitar."
+    },
+    {
+      "file": "teres.mp3",
+      "text": "Pak Azman: Halaman saya sempit. Saya menyusun tanaman secara bertingkat pada dinding dan menggantung pasu. Mari periksa kedua-dua susunan itu."
+    },
+    {
+      "file": "teres-0.mp3",
+      "text": "Pak Azman: Susunan bertingkat dan menegak menjimatkan ruang. Sayur dan herba boleh ditanam di sekitar rumah."
+    },
+    {
+      "file": "teres-1.mp3",
+      "text": "Pak Azman: Pasu gantung menggunakan ruang yang ada secara kreatif. Susunan yang kemas mencantikkan kawasan rumah."
+    },
+    {
+      "file": "kebun.mp3",
+      "text": "Mak Cik Siti: Kami bekerjasama menanam sayur di kawasan tanah lot dalam bandar. Ada batas tanah dan sistem moden. Mari lihat hasil kebun komuniti."
+    },
+    {
+      "file": "kebun-0.mp3",
+      "text": "Mak Cik Siti: Penanaman di atas batas ialah kaedah konvensional. Hasil tanaman menjadi makanan sendiri dan boleh dijual untuk pendapatan sampingan."
+    },
+    {
+      "file": "kebun-1.mp3",
+      "text": "Mak Cik Siti: Sisa dapur yang sesuai boleh dijadikan baja kompos. Hidroponik ialah contoh teknologi moden: akar mendapat nutrien daripada larutan nutrien tanpa menggunakan tanah."
+    },
+    {
+      "file": "system-0.mp3",
+      "text": "Larutan nutrien berada dalam takungan dalam keadaan statik, tidak dikitar semula. Akar terendam dalam larutan untuk menyerap nutrien. Tiada pam untuk mengitar larutan nutrien."
+    },
+    {
+      "file": "system-0-0.mp3",
+      "text": "Akar terendam dalam larutan nutrien dan menyerap air serta nutrien."
+    },
+    {
+      "file": "system-0-1.mp3",
+      "text": "Raga memegang pokok yang ditanam."
+    },
+    {
+      "file": "system-0-2.mp3",
+      "text": "Penutup memegang raga tanaman dan mengelakkan larutan nutrien terdedah kepada cahaya matahari."
+    },
+    {
+      "file": "system-0-3.mp3",
+      "text": "Larutan disimpan dalam takungan. Larutan tidak dipam atau dikitar semula."
+    },
+    {
+      "file": "system-1.mp3",
+      "text": "Pam menolak larutan nutrien dari tangki melalui salur air masuk ke palung tanaman. Larutan kemudian mengalir melalui salur air keluar kembali ke tangki nutrien. Kitaran ini membekalkan air dan nutrien kepada akar."
+    },
+    {
+      "file": "system-1-0.mp3",
+      "text": "Pam menolak larutan nutrien dari tangki ke palung tanaman."
+    },
+    {
+      "file": "system-1-1.mp3",
+      "text": "Salur ini membawa larutan nutrien yang dipam ke palung tanaman."
+    },
+    {
+      "file": "system-1-2.mp3",
+      "text": "Raga memegang tanaman. Akar bersentuhan dengan larutan nutrien di dalam palung."
+    },
+    {
+      "file": "system-1-3.mp3",
+      "text": "Larutan mengalir kembali dari palung ke tangki nutrien untuk dikitar semula."
+    }
+  ]
+}
