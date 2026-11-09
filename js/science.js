@@ -29,7 +29,7 @@ export function drawScience(canvas,type,time,installed=['level','inlet','capilla
    These symbols illustrate the direction of water/nutrient movement; they are not to scale. */
 export const learningStages=[
  [
-  ['Larutan statik','Larutan nutrien disimpan dalam takungan, tanpa pam kitaran.'],
+  ['Larutan statik','Larutan nutrien statik disimpan dalam takungan, tanpa pam untuk mengitar larutan.'],
   ['Akar menyerap','Akar yang bersentuhan dengan larutan mengambil air dan nutrien.'],
   ['Tiada aliran kembali','Tiada salur air keluar untuk mengitar larutan. Pantau aras dan keadaan larutan.']
  ],
