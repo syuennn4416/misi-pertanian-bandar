@@ -16,7 +16,7 @@ const assert=require('node:assert/strict');
   await page.locator('#transcriptClose').click();
   assert.equal(await page.locator('#dialogueTranscript').isVisible(),false);
   await page.locator('#settings').click();
-  await page.locator('#voicePitch').fill('1.15');
+  await page.locator('#voicePitch').evaluate(el=>{el.value='1.15';el.dispatchEvent(new Event('input',{bubbles:true}))});
   await page.locator('#refreshVoices').click();
   await page.locator('#deviceCheck').click();
   assert.match(await page.locator('.device-results').innerText(),/HTTPS|API kamera/);
