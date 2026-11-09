@@ -71,7 +71,111 @@ header{max-width:1400px}
 @keyframes stamp-hit{0%{transform:scale(2.1) rotate(-16deg);opacity:0;filter:blur(3px)}65%{transform:scale(.89) rotate(-8deg);opacity:1;filter:blur(0)}100%{transform:scale(1) rotate(-7deg);opacity:1}}
 @media(prefers-reduced-motion:reduce){.celebrate .badge,.celebrate .final-stamp{animation:none!important}}
 @media(max-width:600px){#dialogue.speaking .nameplate::after{font-size:11px}.celebrate .final-stamp{padding:5px 12px}}
-</style><body><header><button id="home">⌂ <span>Bandar Hijau</span></button><span id="status">RBT • Tahun 5</span><button id="book">Buku Misi</button><button id="settings">Tetapan</button></header><main><div id="playWorkspace"><section id="stage"><canvas id="world" width="640" height="360" aria-label="Bandar piksel interaktif"></canvas><div id="spots"></div><div id="title"></div><div id="objective"></div></section><aside id="cameraPanel" aria-label="Pratonton kamera untuk Misi 3" hidden><div class="camera-header"><strong>Pratonton Kamera</strong><span id="cameraIndicator">Kamera dimatikan</span></div><div id="cameraViewport"><video id="camera" aria-label="Paparan kamera secara langsung" autoplay muted playsinline hidden></video><div id="cameraPlaceholder"><span aria-hidden="true">📷</span><p>Kamera akan dipaparkan di sini selepas diaktifkan.</p></div></div><p id="cameraStatus" role="status">Gunakan tetikus atau sentuhan, atau aktifkan Kawalan Tangan.</p><div id="cameraControls"></div><p class="cameraPrivacy">Kamera hanya dibuka dengan izin. Video tidak dirakam.</p></aside></div><section id="dialogue"><canvas id="portrait" width="80" height="96"></canvas><div class="dialogue-box"><strong class="nameplate">ALYA <small>Rakan penerokaan kamu</small></strong><p id="speech"></p><button id="listen">Dengar Semula</button><span id="voiceStatus"></span></div></section><section id="activity"></section><section id="controls"></section></main><dialog id="modal"><button id="close">Tutup ×</button><div id="modalBody"></div></dialog><div id="toast" role="status"></div><script>
+
+
+/* Phase 4 layout refinement: whole desktop player is 16:9. The 640×360 canvas itself keeps 16:9.
+   A small expandable dialogue stays at upper-left; controls and camera are outside the active canvas. */
+#gameShell{position:relative;display:grid;grid-template-columns:minmax(0,73%) minmax(0,27%);grid-template-rows:minmax(0,1fr) minmax(90px,25%);aspect-ratio:16/9;width:100%;max-width:1400px;margin:0 auto 16px;border:6px solid #3c624d;border-radius:16px;background:#163d32;overflow:hidden;box-shadow:0 10px 0 #9cb58f,0 14px 25px #193d2940;min-height:0}
+#playWorkspace,#playWorkspace.camera-active{display:block;grid-column:1;grid-row:1;min-width:0;min-height:0;padding:10px 8px 2px;overflow:hidden}
+#stage{aspect-ratio:16/9;width:100%;height:auto;min-width:0;margin:0;border-width:3px;box-shadow:none}
+#world{width:100%;height:100%;image-rendering:pixelated}
+#gameTasks{grid-column:2;grid-row:1/3;overflow:auto;overscroll-behavior:contain;min-height:0;min-width:0;padding:12px;background:#215348;border-left:4px solid #7b9e7b;scrollbar-width:thin;scrollbar-color:#b9d0a2 transparent}
+#gameTasks::before{content:'AKTIVITI MISI';display:block;margin:0 0 8px;color:#fff1bf;letter-spacing:.14em;font:bold 12px sans-serif}
+#gameTasks:has(#cameraPanel:not([hidden]))::before{content:'KAWALAN INTERAKTIF'}
+#gameTasks #activity{display:flex;flex-direction:column;gap:8px;align-items:stretch;margin:0;padding:0;color:#fdf2ce;max-width:none}
+#gameTasks #activity p{margin:4px 0 7px;line-height:1.35}
+#gameTasks #activity button{max-width:100%;width:100%;text-align:left;padding:7px 10px;font-size:clamp(12px,1.04vw,15px);line-height:1.3;min-height:38px;white-space:normal}
+#gameTasks #activity .response-panel{padding:10px;font-size:clamp(12px,1.04vw,15px)}
+#gameTasks #activity .response-panel h2,#gameTasks #activity .response-panel h3{font-size:clamp(14px,1.3vw,19px);margin:8px 0}
+#gameTasks #activity .response-panel textarea{min-height:70px;font-size:14px}
+#gameTasks #activity .final-diagrams{grid-template-columns:1fr}
+#gameTasks #activity .final-diagrams figcaption{font-size:12px;min-height:auto}
+#gameActions{grid-column:1;grid-row:2;min-height:0;overflow:auto;padding:10px 14px;background:#244c40;border-top:3px solid #71916d;scrollbar-width:thin}
+#gameActions #controls{display:flex;align-items:flex-start;gap:8px;flex-wrap:wrap;margin:0;padding:0}
+#gameActions #controls button{min-height:42px;padding:7px 12px;font-size:clamp(12px,1vw,15px);max-width:100%}
+#cameraPanel{width:100%;max-width:none;margin:0 0 12px;padding:9px;border-width:2px}
+#cameraViewport{width:100%;max-width:none}
+#cameraControls button{min-height:36px;padding:6px 4px;font-size:12px}
+#cameraStatus{font-size:12px;min-height:auto}
+.cameraPrivacy{font-size:11px}
+#dialogue{position:absolute;top:2%;left:1.5%;z-index:7;display:flex;align-items:flex-start;gap:7px;width:min(43%,465px);max-width:calc(100% - 18px);min-height:0;max-height:34%;margin:0;padding:5px;background:#214963ed;border:2px solid #f8e8c2;border-radius:8px;box-shadow:0 4px 0 #173d45b0;color:#fff5dc;overflow:hidden;transition:max-height .17s ease;pointer-events:auto}
+#dialogue #portrait{width:clamp(34px,4vw,58px);height:clamp(43px,5.1vw,70px);border-radius:5px;flex:0 0 auto;object-fit:contain}
+#dialogue .dialogue-box{background:transparent;color:inherit;border:0;padding:3px 0 0;box-shadow:none;min-height:0;line-height:1.3;flex:1;min-width:0;margin:0}
+#dialogue .nameplate{position:static;display:block;width:max-content;margin:0 0 4px;padding:0 6px;color:#4c3622;background:#fff0c7;border:1px solid #523d2c;border-radius:3px;font-size:clamp(11px,1vw,14px);letter-spacing:.06em}
+#dialogue #speech{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;max-height:3.1em;color:#fff7df;font-size:clamp(11px,1vw,14px);line-height:1.45;text-shadow:none;margin:0 0 4px}
+#dialogue .dialogue-actions{display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+#dialogue #listen{padding:3px 7px;font-size:11px;min-height:27px}
+#dialogue #voiceStatus{display:none;font-size:11px;color:#ffe3ae;margin:0}
+#dialogToggle{align-self:flex-start;border:1px solid #f1dcae;background:#244b5f;color:#fff6dc;box-shadow:none;border-radius:4px;padding:4px 6px;min-height:30px;font-size:10px;line-height:1.2;white-space:nowrap}
+#dialogue.expanded{max-height:77%;width:min(65%,620px);overflow:auto;background:#214963f5}
+#dialogue.expanded #speech{display:block;max-height:none;overflow:visible;font-size:clamp(12px,1.05vw,15px);-webkit-line-clamp:unset}
+#dialogue.expanded #voiceStatus{display:inline}
+#dialogue.expanded .dialogue-actions{gap:7px}
+#title{top:31%;left:5%;max-width:60%}
+#title h1{font-size:clamp(25px,4vw,57px)}
+#objective{left:auto;right:8px;bottom:8px;max-width:65%;text-align:right;z-index:2;font-size:clamp(10px,1.2vw,15px)}
+#assemblyBoard .parts-tray{top:33%;left:2%;z-index:6;max-width:96%}
+#assemblyBoard .parts-tray button{font-size:clamp(10px,1vw,14px);padding:5px 7px}
+#spots .spot{font-size:clamp(10px,1vw,15px);padding:5px 6px}
+#spots .part-hotspot{padding:1px}
+#gameTasks .response-panel select,#gameTasks .response-panel input{min-width:0}
+#gameTasks #cameraPanel[hidden]{display:none!important}
+@media (max-width:1100px) and (min-width:781px){
+ #gameShell{grid-template-columns:minmax(0,71%) minmax(0,29%);grid-template-rows:minmax(0,1fr) minmax(80px,29%)}
+ #gameTasks{padding:7px}
+ #gameTasks #activity button{font-size:12px;padding:6px}
+ #dialogue{width:min(47%,370px);max-height:39%}
+ #dialogue #portrait{width:38px;height:48px}
+ #gameActions{padding:7px}
+ #gameActions #controls button{min-height:36px;padding:5px 7px}
+ #cameraPanel{padding:6px}
+ #cameraControls{gap:5px}
+ #cameraControls button{font-size:11px}
+}
+/* A portrait phone cannot legibly fit an entire lesson into a fixed 16:9 height.
+   Keep the actual game viewport 16:9 and move activities and camera below it. */
+@media (max-width:780px){
+ #gameShell{display:flex;flex-direction:column;aspect-ratio:auto;max-width:100%;overflow:visible;border:3px solid #3c624d;border-radius:10px;margin-bottom:14px}
+ #playWorkspace,#playWorkspace.camera-active{display:block;order:0;padding:3px;overflow:visible;width:100%}
+ #stage{width:100%;height:auto;aspect-ratio:16/9;border:2px solid #6e957b;border-radius:5px;box-shadow:none;overflow:hidden}
+ #gameActions{order:1;border-top:2px solid #71916d;padding:8px;max-height:none;overflow:visible}
+ #gameTasks{order:2;border-left:0;border-top:2px solid #71916d;max-height:none;overflow:visible;width:100%;padding:10px}
+ #gameTasks #activity{display:flex;flex-direction:row;flex-wrap:wrap;align-items:stretch}
+ #gameTasks #activity button{width:auto;flex:1 1 150px;font-size:13px}
+ #gameTasks #activity .response-panel{width:100%}
+ #gameTasks #activity .final-diagrams{grid-template-columns:1fr 1fr}
+ #gameActions #controls{gap:7px}
+ #gameActions #controls button{font-size:13px;min-height:42px;padding:7px 10px}
+ #cameraPanel{width:100%;max-width:440px;margin:0 auto 12px}
+ #cameraViewport{max-width:390px}
+ #dialogue{max-height:42%;width:min(62%,310px);padding:3px;gap:4px;z-index:7}
+ #dialogue #portrait{width:29px;height:39px}
+ #dialogue .nameplate{font-size:10px;padding:0 4px}
+ #dialogue #speech{font-size:10px;line-height:1.2;max-height:2.6em;margin:0}
+ #dialogue #listen{font-size:9px;padding:2px 3px;min-height:23px}
+ #dialogToggle{font-size:9px;min-height:24px;padding:3px}
+ #dialogue.expanded{width:min(94%,430px);max-height:90%}
+ #dialogue.expanded #speech{font-size:12px;line-height:1.3}
+ #title{top:27%;left:4%;max-width:80%}
+ #title h1{font-size:clamp(22px,5vw,34px)}
+ #title p{font-size:10px;padding:4px 5px}
+ #objective{bottom:5px;right:4px;font-size:10px;max-width:66%;padding:4px 6px}
+ #spots .spot{font-size:clamp(9px,1.8vw,12px);padding:3px 4px;min-height:26px}
+ #assemblyBoard .parts-tray{top:30%;gap:4px}
+ #assemblyBoard .parts-tray button{font-size:10px;padding:4px}
+ #assemblyBoard .targets button{width:clamp(28px,7vw,54px);height:clamp(26px,7vw,50px);font-size:11px}
+}
+@media(max-width:440px){
+ #dialogue{width:72%;max-height:46%}
+ #dialogue #portrait{width:25px;height:34px}
+ #title{top:32%}
+ #title h1{font-size:clamp(20px,5.3vw,28px)}
+ #gameTasks #activity{flex-direction:column}
+ #gameTasks #activity button{width:100%;flex:auto;text-align:left}
+ #gameTasks #activity .final-diagrams{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion:reduce){#dialogue{transition:none}}
+</style><body><header><button id="home">⌂ <span>Bandar Hijau</span></button><span id="status">RBT • Tahun 5</span><button id="book">Buku Misi</button><button id="settings">Tetapan</button></header><main><div id="gameShell" aria-label="Paparan permainan 16:9"><div id="playWorkspace"><section id="stage"><canvas id="world" width="640" height="360" aria-label="Bandar piksel interaktif"></canvas><div id="spots"></div><div id="title"></div><div id="objective"></div><section id="dialogue" aria-label="Dialog Alya"><canvas id="portrait" width="80" height="96"></canvas><div class="dialogue-box"><strong class="nameplate">ALYA <small>Rakan penerokaan kamu</small></strong><p id="speech"></p><div class="dialogue-actions"><button id="listen">Dengar Semula</button><span id="voiceStatus"></span></div></div><button type="button" id="dialogToggle" aria-expanded="false" aria-controls="speech" title="Besarkan dialog Alya">Buka dialog</button></section></section></div><aside id="gameTasks" aria-label="Aktiviti misi"><aside id="cameraPanel" aria-label="Pratonton kamera untuk Misi 3" hidden><div class="camera-header"><strong>Pratonton Kamera</strong><span id="cameraIndicator">Kamera dimatikan</span></div><div id="cameraViewport"><video id="camera" aria-label="Paparan kamera secara langsung" autoplay muted playsinline hidden></video><div id="cameraPlaceholder"><span aria-hidden="true">📷</span><p>Kamera akan dipaparkan di sini selepas diaktifkan.</p></div></div><p id="cameraStatus" role="status">Gunakan tetikus atau sentuhan, atau aktifkan Kawalan Tangan.</p><div id="cameraControls"></div><p class="cameraPrivacy">Kamera hanya dibuka dengan izin. Video tidak dirakam.</p></aside><section id="activity"></section></aside><div id="gameActions"><section id="controls"></section></div></div></main><dialog id="modal"><button id="close">Tutup ×</button><div id="modalBody"></div></dialog><div id="toast" role="status"></div><script>
 const definition='Pertanian bandar ialah aktiviti bercucuk tanam di kawasan bandar dengan memanfaatkan ruang yang ada, seperti balkoni, halaman rumah, tanah lot dan kebun komuniti, untuk menghasilkan tanaman makanan. Penanaman boleh dijalankan secara konvensional atau menggunakan teknologi moden.';
 const places=[
 {id:'pangsa',name:'Rumah Pangsa',npc:'Kak Mira',topic:'Balkoni yang menghijau',text:'Saya menanam sawi dalam pasu di balkoni. Ruang kecil pun boleh menghasilkan makanan sendiri. Pilih bekas tanaman di balkoni untuk melihat tanaman kami.',items:[['Pasu sawi','Sawi ditanam dalam pasu berisi tanah. Ini contoh kaedah konvensional yang sesuai untuk ruang terhad.'],['Botol guna semula','Botol terpakai yang sesuai boleh dijadikan bekas tanaman. Penggunaan semula bahan membantu memelihara alam sekitar.']]},
@@ -474,10 +578,11 @@ function spot(text,x,y,fn){const b=btn(text,fn,'#spots','spot');b.style.left=x+'
 function modal(html){$('#modalBody').innerHTML=html;if(!$('#modal').open)$('#modal').showModal()}
 function stopVoice(){sound.stopVoice()}
 function say(text,id=''){speech=text;speechID=id;$('#speech').textContent=text;sound.present(text,id)}
+function collapseDialogue(){const d=$('#dialogue'),b=$('#dialogToggle');d.classList.remove('expanded');b.setAttribute('aria-expanded','false');b.textContent='Lihat lagi';b.title='Besarkan dialog Alya'}
 function speak(){sound.speak(speech,speechID,true)}
 function music(){sound.activate()}
 function unlock(id){if(!state.notes.includes(id))state.notes.push(id);save()}
-function go(next){if(next==='ending'&&![1,2,3,4,5].every(n=>state.badges.includes(n))){toast('Lengkapkan kelima-lima misi sebelum menamatkan permainan.');return}const required=/^repair[01]$/.test(next)||next==='gate4'?3:/^final[0-2]$/.test(next)?4:next==='ending'?5:0;if(required&&state.mode!=='kelas'&&!state.badges.includes(required)){toast('Selesaikan misi sebelumnya dahulu.');return}$('#assemblyBoard')?.remove();hands?.stop();hands=null;assemblyUI=null;$('#cameraPanel').hidden=true;$('#playWorkspace').classList.remove('camera-active');$('#camera').hidden=true;$('#cameraPlaceholder').hidden=false;$('#cameraControls').replaceChildren();$('#cameraIndicator').textContent='Kamera dimatikan';$('#activity').replaceChildren();stopVoice();scene=next;paused=false;simTime=0;if(next!=='home'&&!review){state.scene=next;state.started=true;save()}$('#spots').replaceChildren();$('#controls').replaceChildren();$('#title').innerHTML='';$('#objective').textContent='';$('#status').textContent=`${state.mode==='kelas'?'Mod Kelas':'Mod Kendiri'} · ${state.badges.length}/5 lencana`;
+function go(next){collapseDialogue();if(next==='ending'&&![1,2,3,4,5].every(n=>state.badges.includes(n))){toast('Lengkapkan kelima-lima misi sebelum menamatkan permainan.');return}const required=/^repair[01]$/.test(next)||next==='gate4'?3:/^final[0-2]$/.test(next)?4:next==='ending'?5:0;if(required&&state.mode!=='kelas'&&!state.badges.includes(required)){toast('Selesaikan misi sebelumnya dahulu.');return}$('#assemblyBoard')?.remove();hands?.stop();hands=null;assemblyUI=null;$('#cameraPanel').hidden=true;$('#playWorkspace').classList.remove('camera-active');$('#camera').hidden=true;$('#cameraPlaceholder').hidden=false;$('#cameraControls').replaceChildren();$('#cameraIndicator').textContent='Kamera dimatikan';$('#activity').replaceChildren();stopVoice();scene=next;paused=false;simTime=0;if(next!=='home'&&!review){state.scene=next;state.started=true;save()}$('#spots').replaceChildren();$('#controls').replaceChildren();$('#title').innerHTML='';$('#objective').textContent='';$('#status').textContent=`${state.mode==='kelas'?'Mod Kelas':'Mod Kendiri'} · ${state.badges.length}/5 lencana`;
 if(next==='home'){review=false;$('#title').innerHTML='<span class="eyebrow">PENGEMBARAAN RBT • TAHUN 5</span><h1>Misi Pertanian<br>Bandar</h1><p>Jelajah Sistem Penanaman Secara Takungan</p>';$('#objective').textContent='Selamat datang ke Bandar Hijau · Fasa 3';say('Hai, saya Alya! Ruang rumah kita kecil, tetapi impian kebun kita besar. Mari bantu jiran meneroka pertanian bandar.','intro');btn('Mula Permainan Baharu',newGame,'#controls','primary');btn('Sambung Permainan',()=>{music();review=false;go(state.scene||'map')}).disabled=!state.started;btn('Pilih Misi / Main Semula',missionMenu);btn('Buku Misi Pertanian',book);btn('Mod Ulang Kaji',()=>{review=true;go('lab')});btn('Tetapan',settings)}
 else if(next==='map'){say('Jiran kita mahu menanam sayur, tetapi ruang rumah terhad. Terokai tiga tempat dan periksa dua objek di setiap tempat. Kemudian ceritakan penemuan kamu.','map');$('#objective').textContent=`Misi 1 · Misteri Pertanian Bandar · ${places.filter(p=>p.items.every((_,i)=>state.visited.includes(p.id+i))).length}/3 tempat diterokai`;spot('Rumah Pangsa',19,49,()=>go('pangsa'));spot('Rumah Teres',73,51,()=>go('teres'));spot('Kebun Komuniti',22,91,()=>go('kebun'));spot(state.badges.length?'Pusat Teknologi':'Pusat Teknologi · terkunci',72,91,()=>state.badges.length||state.mode==='kelas'?go('lab'):toast('Lengkapkan Misi 1 untuk membuka pusat teknologi.'));btn('Catat Penemuan',answer1,'#controls','primary');btn('Petunjuk',()=>{state.hints.push({mission:1,time:Date.now()});save();say(definition+' Contohnya, sawi ditanam dalam pasu di balkoni rumah pangsa.','definition')});btn('Pilih Misi',missionMenu)}
 else if(places.some(p=>p.id===next)){const p=places.find(p=>p.id===next);say(`${p.npc}: ${p.text}`,p.id);$('#objective').textContent='Misi 1 · '+p.topic;for(let i=0;i<2;i++)spot((state.visited.includes(p.id+i)?'✓ ':'')+p.items[i][0],i?71:25,i?49:73,()=>{if(!state.visited.includes(p.id+i))state.visited.push(p.id+i);unlock(p.id);go(p.id);say(`${p.npc}: ${p.items[i][1]}`,p.id+'-'+i)});btn('Kembali ke Bandar',()=>go('map'),'#controls','primary')}
@@ -516,6 +621,7 @@ function settings(){
  $('#musicEnabled').onchange=e=>{state.musicEnabled=e.target.checked;sound.sync();save()};
  document.querySelectorAll('[data-vol]').forEach(el=>el.oninput=()=>{state.vol[el.dataset.vol]=Number(el.value);sound.sync();save()});
 }
+$('#dialogToggle').onclick=()=>{const d=$('#dialogue'),b=$('#dialogToggle');const expanded=d.classList.toggle('expanded');b.setAttribute('aria-expanded',String(expanded));b.textContent=expanded?'Ringkaskan':'Lihat lagi';b.title=expanded?'Ringkaskan dialog Alya':'Besarkan dialog Alya'};
 $('#home').onclick=()=>go('home');$('#book').onclick=book;$('#settings').onclick=settings;$('#close').onclick=()=>$('#modal').close();$('#listen').onclick=speak;
 function frame(t){const delta=Math.min((t-last)/1000,.1);last=t;if(!paused)simTime+=delta;if(phase3.draw(scene,simTime,$('#world'),art)){}else if(scene==='sim2')drawScience($('#world'),'aqua',simTime);else if(scene==='sim3'||scene==='flow')drawScience($('#world'),'self',simTime);else if(scene==='workshop')drawScience($('#world'),'self',0,state.assembly,true);else art.draw(scene,scene.startsWith('sim')?simTime:t/1000);if(scene==='flow'&&simTime>=6&&!flowCompleted){flowCompleted=true;state.simulationSeen=true;save();$('#explainLab').disabled=false;}if($('#stampAlya')){const stampArt=renderer($('#stampAlya'));stampArt.clear();stampArt.alya(40,50,t/1000,2.7,'stamp');}portrait.clear();portrait.alya(40,50,t/1000,2.7,talking?'talk':Math.floor(t/3000)%2?'wave':'idle');requestAnimationFrame(frame)}go('home');requestAnimationFrame(frame);
 function workshop(){
