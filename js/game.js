@@ -121,14 +121,19 @@ function book(){
    if(data.product==='misi-pertanian-bandar'&&data.format===1&&data.profiles&&typeof data.profiles==='object'){
     next={kendiri:normalizeProgress(data.profiles.kendiri,'kendiri'),kelas:normalizeProgress(data.profiles.kelas,'kelas')};
    }else if(['kendiri','kelas'].includes(data.mode)&&Array.isArray(data.answers)&&Array.isArray(data.badges)){
-    next={...profiles,[state.mode]:normalizeProgress(data,state.mode)};
+    next={...profiles,[data.mode]:normalizeProgress(data,data.mode)};
    }else throw Error('Fail ini bukan sandaran Misi Pertanian Bandar yang disokong.');
    const counts=next.kendiri.badges.length+'/'+next.kelas.badges.length;
    modal('<h2>Sahkan Import Sandaran</h2><p>Import menggantikan rekod yang dipilih dalam pelayar ini termasuk jawapan dan penilaian guru. Eksport sandaran lama dahulu jika perlu.</p><p>Lencana dalam sandaran: Mod Kendiri / Mod Kelas = '+esc(counts)+'</p><button id="confirmImport">Ya, pulihkan sandaran</button><button id="cancelImport">Batal</button>');
    $('#cancelImport').onclick=()=>$('#modal').close();
    $('#confirmImport').onclick=()=>{
-    const before=profiles,previous=state;profiles=next;state=profiles[previous.mode];review=false;stopVoice();
-    try{save();sound.sync();$('#modal').close();go('home');toast('Sandaran berjaya dipulihkan.')}catch{profiles=before;state=previous;toast('Import gagal; rekod lama dikekalkan.')}
+    const previous=state;
+    try{
+     // Write and validate the full backup before changing any in-memory progress.
+     localStorage.setItem('misi-bandar-v2',JSON.stringify({mode:previous.mode,profiles:next}));
+     profiles=next;state=profiles[previous.mode];storageOK=true;review=false;stopVoice();
+     sound.sync();$('#modal').close();go('home');toast('Sandaran berjaya dipulihkan.');
+    }catch{toast('Import gagal. Rekod lama masih dikekalkan. Semak ruang simpanan pelayar.')}
    };
   }catch(err){toast('Import tidak berjaya: '+err.message)}
  };
