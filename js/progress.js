@@ -1,6 +1,6 @@
 export function freshCase(){return {observed:[],choices:[],diagnosed:false,predicted:false,repaired:false,explained:false};}
 export const badgeNames=['Peneroka Pertanian Bandar','Pakar Sistem Takungan','Pakar Makmal','Penyelamat Sistem Penanaman','Wira Pertanian Bandar'];
-export function freshProgress(mode='kendiri'){return {version:3,started:false,scene:'map',visited:[],notes:[],badges:[],stamps:[],answers:[],drafts:{},hints:[],inspected:[[],[],[],[]],summarySeen:false,assembly:[],simulationSeen:false,cases:[freshCase(),freshCase()],repairLog:[],finalDone:[],cards:[],completedAt:null,mode,vol:{voice:.8,music:.22,sfx:.5},muted:false,autoVoice:true,musicEnabled:true,voiceLanguage:'id-ID',voiceId:'auto',voiceRate:1.1,pbd:{scores:{'7.1.1':null,'7.1.2':null},checks:['','','','',''],comment:'',assessedAt:null}};}
+export function freshProgress(mode='kendiri'){return {version:3,started:false,scene:'map',visited:[],notes:[],badges:[],stamps:[],answers:[],drafts:{},hints:[],inspected:[[],[],[],[]],summarySeen:false,assembly:[],simulationSeen:false,cases:[freshCase(),freshCase()],repairLog:[],finalDone:[],cards:[],completedAt:null,mode,vol:{voice:.8,music:.22,sfx:.5},muted:false,autoVoice:true,musicEnabled:true,voiceLanguage:'id-ID',voiceId:'auto',voiceRate:1.1,pbd:{scores:{'7.1.1':null,'7.1.2':null},checks:['','','','',''],comment:'',studentName:'',assessedAt:null}};}
 export function normalizeProgress(raw,mode='kendiri'){
  const base=freshProgress(mode);if(!raw||typeof raw!=='object')return base;
  for(const k of ['visited','notes','badges','stamps','answers','hints','assembly'])if(Array.isArray(raw[k]))base[k]=raw[k];
@@ -17,6 +17,7 @@ export function normalizeProgress(raw,mode='kendiri'){
   for(const sp of ['7.1.1','7.1.2'])if([1,2,3].includes(raw.pbd.scores?.[sp]))base.pbd.scores[sp]=raw.pbd.scores[sp];
   if(Array.isArray(raw.pbd.checks))base.pbd.checks=base.pbd.checks.map((_,i)=>['ya','belum'].includes(raw.pbd.checks[i])?raw.pbd.checks[i]:'');
   if(typeof raw.pbd.comment==='string')base.pbd.comment=raw.pbd.comment.slice(0,3000);
+  if(typeof raw.pbd.studentName==='string')base.pbd.studentName=raw.pbd.studentName.slice(0,120);
   if(Number.isFinite(raw.pbd.assessedAt))base.pbd.assessedAt=raw.pbd.assessedAt;
  }
  return base;
