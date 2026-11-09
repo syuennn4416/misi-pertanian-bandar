@@ -60,8 +60,9 @@ function refreshVoiceOptions(){
  add('auto','Automatik (utamakan suara Google jika ada)');
  const choices=sound.voicesFor(language.value);
  for(const v of choices)add(sound.voiceKey(v),v.name+' — '+v.lang+(v.localService?' · Peranti':' · Dalam talian / pelayar'));
- list.value=[...list.options].some(opt=>opt.value===previous)?previous:'auto';
- if(previous!=='auto'&&list.value==='auto'){$('#voicePreviewStatus').textContent='Suara lama tidak tersedia pada peranti ini. Pilih suara lain.'}
+ if(previous!=='auto'&&![...list.options].some(opt=>opt.value===previous)){const missing=document.createElement('option');missing.value=previous;missing.textContent='Suara pilihan tidak tersedia — pilih suara lain';missing.disabled=true;list.append(missing)}
+ list.value=previous;
+ if(previous!=='auto'&&list.selectedOptions[0]?.disabled){$('#voicePreviewStatus').textContent='Suara lama tidak tersedia pada peranti ini. Pilih suara lain.'}
  else $('#voicePreviewStatus').textContent=choices.length?choices.length+' suara tersedia. Pilih dan klik Uji Suara.':'Tiada suara untuk bahasa ini pada peranti ini. Cuba bahasa lain.';
 }
 function settings(){
