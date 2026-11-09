@@ -68,13 +68,21 @@ Tests cover Misi 1–5, exploration and synthesis gates, four stations, pause/re
 - `js/hands.js`: permission, MediaPipe, smoothing, calibration and cleanup.
 - `js/phase3-content.js`: fault clues, causes, hints and final prompts.
 - `js/phase3.js`: investigation state flow, final challenges, cards, readable report and ending.
+- `js/audio.js`: browser-based automatic narration, original garden soundtrack, button/correct/error/reward/stamp effects and music ducking.
 - `scripts/bundle.py`: standalone HTML generator.
-- `tests/game.test.cjs`, `tests/fallback.test.cjs`, `tests/phase3.test.cjs`: browser journey and touch/fallback checks.
+- `tests/audio.test.cjs`: gesture activation, voice replay, mute, audio settings and sound effects.
+- `tests/game.test.cjs`, `tests/fallback.test.cjs`, `tests/phase3.test.cjs`, `tests/responsive_camera.test.cjs`: browser journey, touch/fallback and device-layout checks.
 - `assets/audio/manifest.json`: Malay narration recording checklist.
 
 ## Audio and remaining scope
 
-Subtitles, replay narration, mute, separate volume controls and background ducking are retained. Only `ms-MY` device voices are selected. Natural Malaysian female recordings are not supplied; missing audio falls back to subtitles without blocking play. Audio IDs for the added content are included in the manifest.
+### Phase 4 audio — implemented
+
+Alya's next dialogue attempts to play automatically **after the first user interaction** (browser autoplay rules). Captions remain visible even if voice is unavailable. `Dengar Semula` replays the latest line. In `Tetapan`, the user can independently control `Bacaan suara Alya secara automatik`, `Muzik latar`, overall mute and voice/music/SFX volume; preferences are saved per mode. Speaking reduces the background music level and moving to a new scene cancels the old line.
+
+`js/audio.js` synthesizes an **original, softly looping garden melody** and distinct button, correct-action, wrong-action, badge and red `SELESAI!` stamp sound effects locally with Web Audio. No copyrighted commercial song is embedded. Audio starts only after a user gesture. A standalone HTML retains these sounds without external music files.
+
+**Real recorded voice limitation:** `assets/audio/manifest.json` is a recording checklist, not a verified set of MP3 files. The game tries an available device `ms-MY` voice, otherwise attempts a matching recording when available on a hosted site, then a best-effort device voice with `lang=ms-MY`. If the device lacks a Malaysian Malay female voice, the result may use a different voice/accent or be unavailable. The game gives a clear status and keeps readable subtitles, without claiming to guarantee a natural Malaysian female voice. Adding reviewed `assets/audio/<id>.mp3` files is recommended for consistent final voice quality.
 
 Individual response-sheet generation, Phase 4 art polish and professional audio remain outside this delivery. Real camera gesture tracking remains unverified because no camera was available. Browser print dispatch and print styling are tested, not a physical printer. Reference sources are the user-supplied RPH, textbook pages 64–71 and DSKP excerpt. Open answers are not automatically scored.
 
