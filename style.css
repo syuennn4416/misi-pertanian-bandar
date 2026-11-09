@@ -311,3 +311,33 @@ header{max-width:1400px}
 .worksheet .answer-lines{height:100px;margin:12px 0;background:repeating-linear-gradient(to bottom,transparent 0 28px,#a8bbaa 29px,#a8bbaa 30px)}
 @media(max-width:650px){.knowledge-grid,.rubric-grid{grid-template-columns:1fr}.badge-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.book-tabs button{flex:1 1 130px}.science-guide [data-active-stage]{min-height:0}.book-actions button{flex:1 1 150px}}
 @media print{.book-tabs,.book-actions{display:none!important}.worksheet .answer-lines{height:110px}}
+
+
+/* Phase 4 remaining-category polish: device safe areas, accessible activity controls, print. */
+#gameShell,#gameTasks,#gameActions{min-width:0}
+#gameTasks .science-guide button,#gameTasks .book-actions button{touch-action:manipulation}
+#modalBody{overflow-wrap:anywhere}
+.book-history article,.knowledge-card,.rubric-card,.badge-tile{break-inside:avoid;page-break-inside:avoid}
+#gameTasks .science-guide .science-navigation{justify-content:space-between}
+#gameTasks .response-panel input:focus-visible,#gameTasks .response-panel textarea:focus-visible,#gameTasks .response-panel select:focus-visible,#teacherRubric :focus-visible{outline:3px solid #edb95f;outline-offset:2px}
+@media(max-width:780px){
+  body{padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px)}
+  #gameShell{max-width:100%}
+  #gameActions,#gameTasks{overflow-wrap:anywhere}
+  #gameTasks .science-guide{padding:12px}
+  #gameTasks .science-guide [data-active-stage]{min-height:60px}
+}
+@media(max-width:480px){
+  #gameTasks .knowledge-grid{grid-template-columns:1fr}
+  #gameTasks .response-panel{padding:10px}
+  #modalBody .book-tabs button{font-size:14px;padding:9px;flex-basis:115px}
+}
+@media print{
+ .worksheet{color:#141b15!important;background:#fff!important}
+ .worksheet h2,.worksheet h3{break-after:avoid}
+ .worksheet .answer-lines{break-inside:avoid}
+ .worksheet .answer-lines + h3{break-before:auto}
+ .worksheet p{orphans:2;widows:2}
+ .pbd-print-table{border:1px solid #444!important}
+ .pbd-print-table tr{break-inside:avoid}
+}
