@@ -24,6 +24,13 @@ The repository's default branch was `feature/phase2-missions` at the beginning o
 - **D — UI:** Long mission activities and answer forms have a dedicated scrollable side rail on desktop; action buttons have a separate bottom rail inside the frame. The upper-left dialogue is compact by default so components around y=32% remain accessible.
 - **Verification:** Consolidated `Misi-Pertanian-Bandar.html` JavaScript parsed successfully and includes the five existing missions, original Alya rendering, audio system and camera. The updated responsive test now checks 16:9 frame, mobile game viewport and expandable dialogue. **Real device layout/playwright pass not yet confirmed in this session**.
 
+## Category C — Student-selectable language and voices (latest)
+- **Voice settings:** Under `Tetapan → Suara Alya`, students can choose voice **language**, a **specific installed browser voice**, and **speed (0.70–1.40×)**, then press `Uji Suara Alya` to hear a test before playing. `Dengar Semula` and automatic narration continue to use the chosen voice.
+- **Previous Chef Cilik preference:** The initial preference is `Bahasa Indonesia (id-ID)`, `Automatik` (prioritizes Google Bahasa Indonesia when available), speed `1.10×`. This is only the **spoken accent/voice**: educational text stays in standard Malaysian Malay. Users can instead choose ms-MY, English, Mandarin, or other installed languages.
+- **No unwanted fallback:** If a chosen language/voice is missing, the game does **not** silently switch to an unrelated robotic default; readable captions stay visible, and the settings report that the voice is unavailable. Voices are sourced from the user's device/browser and refreshed on `voiceschanged`. A Google voice can only be selected when actually available.
+- **Save:** The chosen language, voice and speed are saved per class/self-study profile and kept when starting a new game, without affecting badges or previous answers. Volume, music and sound effect preferences remain separate.
+- **Testing:** The audio regression test covers voice choice, Google id-ID, ms-MY, rate and no-wrong-voice fallback. Full browser/actual voice availability remains to be checked on each device.
+
 ## Remaining Phase 4 backlog
 - **A:** Further polish of map perspective, furniture, motion and pixel coherence; visually inspect all three new scenes at projector and phone sizes.
 - **B:** Fine-tune hotspot coordinates on real devices; improve the visual teaching of aquaponics microbes and capillary movement; test real hand gesture pinch on HTTPS.
