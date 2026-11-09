@@ -11,13 +11,15 @@ The repository's default branch was `feature/phase2-missions` at the beginning o
 - **B — Interaction:** Small numbered markers are added over each of the four scientific diagrams. They trigger the same explanation and inspection logic as the existing buttons. Misi 4 diagrams likewise have observation and repair markers. Existing text-button fallbacks remain available.
 - **B/D — Camera preview & responsive layout:** Misi 3 now shows a 4:3 student-visible camera preview in a dedicated panel. Desktop displays the game and preview side-by-side; tablet/phone stack them without obscuring assembly targets. Camera permission is opt-in; the alternative mouse/touch mode remains active, and the camera stream stops on exit.
 - **D/H — Verification:** Playwright layout/assembly/fallback simulation succeeded for 1440px desktop, 820px tablet and 390px phone using an equivalent standalone HTML loaded into the browser without a server origin. All three layouts had no horizontal overflow or page script errors. This does not verify live HTTPS hand tracking.
+- **C — Alya audio and celebration:** Added automatic dialogue narration after user activation, manual Dengar Semula, preferred ms-MY device voice with transparent fallback, audio ducking while speaking, synthesized original garden melody, separate click/success/stamp tones, stronger red SELESAI! badge animation, and persistent music/auto-voice settings. The standalone build bundles the audio engine.
+- **C — Verification:** JavaScript parse check and eight isolated audio-controller checks passed (user gesture, narration, voice selection, replay, mute, sounds and manual replay). Real device voice availability and MP3 recordings remain unverified.
 - **A — Scenes:** `Rumah Pangsa`, `Rumah Teres` and `Kebun Komuniti` now have distinct Canvas pixel backgrounds. **Alya's character source, palette and drawing function were not modified.**
 - The downloadable `Misi-Pertanian-Bandar.html` is regenerated from the modular source.
 
 ## Remaining Phase 4 backlog
 - **A:** Further polish of map perspective, furniture, motion and pixel coherence; visually inspect all three new scenes at projector and phone sizes.
 - **B:** Fine-tune hotspot coordinates on real devices; improve the visual teaching of aquaponics microbes and capillary movement; test real hand gesture pinch on HTTPS.
-- **C:** Natural female ms-MY narration, aligned subtitles, verified audio assets, background music and richer stamping sound effects. Current speech/audio is not production-ready.
+- **C:** A natural **recorded** ms-MY female voice is still pending: the existing asset manifest lists proposed files, not verified MP3 audio. Current browser voice output is best-effort and varies by device. Verify playback on desktop, iPad and Android/iOS; replace TTS with authorized recordings when available.
 - **D:** Further projector typography and phone/tablet ergonomic polish; responsive camera preview and baseline device layouts are implemented but require real hardware tests.
 - **E:** Better illustrated Buku Misi, replay navigation and optional teacher assessment rubric; do not equate medals with PBD mastery.
 - **F:** Full save/replay verification and regression testing after merging; preserve user data and keep a new user's state empty.
@@ -29,3 +31,6 @@ Updated source is committed. A local JavaScript parser check passed against the 
 
 ## Scope
 Only RBT Tahun 5 SP 7.1.1 and 7.1.2 are taught. The selection card bridges to SP 7.1.3 in the next lesson; no drawing exercise was added.
+
+## Phase 4 Category C audio controls
+The game now starts music only after a user gesture, uses original procedural sounds (no third-party song), and automatically attempts to speak subsequent Alya dialogue. `Dengar Semula`, mute, `Bacaan suara Alya secara automatik`, `Muzik latar`, and three independent volume sliders are available from `Tetapan`. Audio preferences remain separate for `kelas` and `kendiri`. HTML `file://` can play the original synthesized music/SFX, but voice selection depends on the browser; camera still requires HTTPS or localhost. The recorded audio manifest in `assets/audio/manifest.json` is not proof that MP3 files exist. WebAudio playback depends on the browser allowing sound after a user click.
