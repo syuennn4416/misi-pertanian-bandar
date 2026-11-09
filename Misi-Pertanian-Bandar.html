@@ -175,6 +175,18 @@ header{max-width:1400px}
  #gameTasks #activity .final-diagrams{grid-template-columns:1fr}
 }
 @media (prefers-reduced-motion:reduce){#dialogue{transition:none}}
+
+
+/* Keep default dialogue compact so hot-spots at 28–32% height remain uncovered. */
+#dialogue:not(.expanded){max-height:23%;min-height:0}
+#dialogue:not(.expanded) #speech{-webkit-line-clamp:1;max-height:1.5em}
+#dialogue:not(.expanded) #listen{display:none}
+@media(max-width:780px){
+ #dialogue:not(.expanded){max-height:25%;width:min(65%,300px)}
+ #dialogue:not(.expanded) #portrait{width:25px;height:31px}
+ #dialogue:not(.expanded) .nameplate{margin:0 0 1px}
+}
+@media(max-width:440px){#dialogue:not(.expanded){width:min(69%,260px)}}
 </style><body><header><button id="home">⌂ <span>Bandar Hijau</span></button><span id="status">RBT • Tahun 5</span><button id="book">Buku Misi</button><button id="settings">Tetapan</button></header><main><div id="gameShell" aria-label="Paparan permainan 16:9"><div id="playWorkspace"><section id="stage"><canvas id="world" width="640" height="360" aria-label="Bandar piksel interaktif"></canvas><div id="spots"></div><div id="title"></div><div id="objective"></div><section id="dialogue" aria-label="Dialog Alya"><canvas id="portrait" width="80" height="96"></canvas><div class="dialogue-box"><strong class="nameplate">ALYA <small>Rakan penerokaan kamu</small></strong><p id="speech"></p><div class="dialogue-actions"><button id="listen">Dengar Semula</button><span id="voiceStatus"></span></div></div><button type="button" id="dialogToggle" aria-expanded="false" aria-controls="speech" title="Besarkan dialog Alya">Buka dialog</button></section></section></div><aside id="gameTasks" aria-label="Aktiviti misi"><aside id="cameraPanel" aria-label="Pratonton kamera untuk Misi 3" hidden><div class="camera-header"><strong>Pratonton Kamera</strong><span id="cameraIndicator">Kamera dimatikan</span></div><div id="cameraViewport"><video id="camera" aria-label="Paparan kamera secara langsung" autoplay muted playsinline hidden></video><div id="cameraPlaceholder"><span aria-hidden="true">📷</span><p>Kamera akan dipaparkan di sini selepas diaktifkan.</p></div></div><p id="cameraStatus" role="status">Gunakan tetikus atau sentuhan, atau aktifkan Kawalan Tangan.</p><div id="cameraControls"></div><p class="cameraPrivacy">Kamera hanya dibuka dengan izin. Video tidak dirakam.</p></aside><section id="activity"></section></aside><div id="gameActions"><section id="controls"></section></div></div></main><dialog id="modal"><button id="close">Tutup ×</button><div id="modalBody"></div></dialog><div id="toast" role="status"></div><script>
 const definition='Pertanian bandar ialah aktiviti bercucuk tanam di kawasan bandar dengan memanfaatkan ruang yang ada, seperti balkoni, halaman rumah, tanah lot dan kebun komuniti, untuk menghasilkan tanaman makanan. Penanaman boleh dijalankan secara konvensional atau menggunakan teknologi moden.';
 const places=[
