@@ -1,59 +1,76 @@
-# Misi Pertanian Bandar — Fasa 1
+# Misi Pertanian Bandar — Phase 2
 
-Permainan HTML5 / Canvas, Bahasa Melayu Malaysia, RBT Tahun 5 SP 7.1.1 dan 7.1.2.
+Continuation of the existing HTML5/Canvas game, in Bahasa Melayu Malaysia. Curriculum: RBT Tahun 5, SP 7.1.1 and 7.1.2. Artwork, map, Alya and audio interfaces are retained. No Misi 4 gameplay, final mission or SP 7.1.3 drawing task is included.
 
-## Jalankan
+## Run locally
+
+Requires Python 3; Node is used for the npm shortcuts and tests.
 
 ```sh
-cd /workspace/misi-pertanian-bandar
 npm start
 ```
 
-Buka `http://localhost:8080` pada komputer sendiri. Python 3 diperlukan untuk pelayan; tiada proses binaan atau pakej permainan diperlukan. Gunakan pelayan HTTP, bukan membuka fail HTML secara terus.
-
-## Fail
-
-- `index.html`, `style.css`: antara muka responsif.
-- `js/art.js`: grafik piksel asli, Alya, bandar, bilik dan simulasi keratan rentas.
-- `js/content.js`: kandungan pembelajaran berdasarkan halaman buku teks 66–71 yang dibekalkan.
-- `js/game.js`: penerokaan, dialog, audio, buku, jawapan, lencana dan simpanan.
-- `assets/audio/manifest.json`: skrip dan nama fail rakaman.
-- `tests/game.test.cjs`: ujian perjalanan pengguna melalui Chromium.
-
-## Aliran boleh dimainkan
-
-Mula → tiga tempat → periksa dua objek setiap tempat → Catat Penemuan → tulis maksud dan contoh → lencana / SELESAI → Pusat Teknologi → dua stesen kultur air → periksa empat komponen setiap stesen → bandingkan dan jelaskan dua sistem.
-
-Jawapan kosong disekat. Jawapan terbuka tidak diberikan markah automatik: guru perlu menentukan ketepatan penerangan. Lencana menandakan penyertaan dan penyempurnaan aktiviti, bukan TP. Jawapan pertama dan pindaan disimpan berasingan bersama penggunaan petunjuk; eksport JSON tersedia dalam Buku Misi.
-
-Mod Kelas membuka pemilihan misi untuk guru. Gunakan Lembaran Respons Individu di luar permainan; komputer guru tidak mengumpul jawapan setiap murid secara automatik. Ulang kaji membuka animasi tanpa memberi lencana.
-
-## Audio dan simpanan
-
-Semua grafik dijana secara tempatan dan tiada CDN diperlukan untuk permainan. Muzik latar ringkas dan kesan bunyi dijana dengan Web Audio selepas interaksi pengguna. Hanya suara pelayar dengan locale `ms-MY` diterima; suara itu bergantung pada peranti dan mungkin menggunakan rangkaian. Jantina atau keaslian suara peranti tidak dijamin. Tiada suara Indonesia digunakan.
-
-Rakaman wanita Malaysia **belum dibekalkan**. Rakam teks dalam `assets/audio/manifest.json` sebagai MP3 dengan nama yang dinyatakan. Fail disimpan pada hos yang sama. Jika suara peranti tiada, pemain cuba rakaman; jika rakaman gagal, sari kata kekal dan permainan diteruskan. Oleh itu, jangan anggap suara semula jadi atau operasi suara luar talian sudah lengkap.
-
-Simpanan menggunakan localStorage pada pelayar/origin yang sama, bukan penyegerakan antara peranti. Mengosongkan data pelayar memadam simpanan. Jika storan disekat, eksport rekod sebelum keluar.
-
-## Ujian
+Open `http://localhost:8080` on your computer. The modular game needs HTTP. The generated `Misi-Pertanian-Bandar.html` contains the game code and styles in one file; use localhost or HTTPS for camera access and reliable storage. Rebuild it after source edits:
 
 ```sh
+python3 scripts/bundle.py
+```
+
+## Playable flow
+
+1. **Misi 1:** visit Rumah Pangsa, Rumah Teres and Kebun Komuniti; inspect all six objects. Alya guides a synthesis of the definition before the personal explanation opens. Write a definition and example to finish the activity.
+2. **Misi 2:** inspect all components of four systems. Play, pause and replay the scientific cutaways; compare systems. Select two distinct systems and write separate explanations. Earn **Pakar Sistem Takungan**.
+3. **Misi 3:** install the water-level indicator at A, filling channel at B, and capillary material at C. Wrong placements are rejected. Mouse drag, touch drag, or select-then-tap all use the same validator. After installation, run the capillary simulation and observe at least six seconds before explaining both the component function and water movement. Earn **Pakar Makmal**.
+4. The Misi 4 entrance unlocks and clearly says that its gameplay is not yet implemented.
+
+Badges record activity completion, **not correctness or DSKP Tahap Penguasaan**. Teachers judge open explanations, accepting equivalent reasonable answers. First responses, revisions, unfinished drafts, hint use, stamps, inspected components and notes persist. Class mode records a shared discussion only; use individual response sheets for individual PBD.
+
+## Saves and replay
+
+`misi-bandar-v2` stores separate `kendiri` and `kelas` profiles. The former `misi-bandar-v1` save is migrated without deleting the original key. New game requires confirmation when progress exists and resets only the selected mode. Continue restores the saved scene, assembly and records. Replay preserves badges and response history. Review does not award badges. Save data is local to this browser/origin, not synchronized between devices. Export JSON from Buku Misi before clearing browser data.
+
+## Hand control
+
+Only the **Kawalan Tangan** button requests camera permission. Video is processed in the browser and is neither uploaded nor recorded. Stop the camera with **Tetikus / Sentuhan** or by leaving the workshop. No microphone is requested.
+
+After initialization, hold an open hand near the camera centre for 25 detected frames. Move the index finger to steer the mirrored cursor. Pinch thumb and index finger for three stable frames to select a component, then open the pinch over a target. Position smoothing and different pinch/release thresholds reduce jitter. **Kalibrasi Semula** resets centring; **Cuba Semula Kamera** restarts loading and permission flow. Mouse/touch remains available during failure or loading.
+
+Network dependencies, loaded only when hand control is activated:
+
+- MediaPipe Tasks Vision **0.10.21** JS and WASM: `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.21/`
+- Google's Hand Landmarker float16 model: `https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task`
+
+Permit `cdn.jsdelivr.net` and `storage.googleapis.com` in restrictive networks. HTTPS or localhost and browser camera permission are required. This feature is **not fully offline**. No camera hardware was available in the development environment; the actual browser returned “Requested device not found”. Real hand tracking, pinch accuracy and physical calibration remain unverified. The model host was also blocked by the cloud network policy. The JS version URL returned HTTP 200. Fallback and touch completion were tested; no synthetic input is represented as successful real-camera testing.
+
+## Tests
+
+The supplied cloud environment provides Playwright and Chromium. Elsewhere install Playwright as a development test tool (`npm install --no-save playwright`) and Chromium, setting `CHROMIUM_PATH` to the browser executable if it is not `/usr/bin/chromium`.
+
+```sh
+# terminal 1
 npm start
-# Terminal kedua, dalam persekitaran yang menyediakan Playwright dan Chromium:
+# terminal 2
 npm test
 ```
 
-Ujian menggunakan pakej `playwright` dan `/usr/bin/chromium` yang tersedia dalam persekitaran pembangunan ini. Untuk komputer lain, pasang Playwright sebagai alat ujian dan sesuaikan laluan Chromium. Permainan tidak memerlukan Playwright.
+Tests cover Misi 1–3, exploration and synthesis gates, four stations, pause/replay, two distinct system explanations, wrong drops, mouse dragging, capillary observation, three unique badges, page close/reopen, replay preservation, mode isolation, reset confirmation, legacy migration, bundled HTML, mobile touch and unavailable-camera fallback. Browser runtime errors are checked. These tests do not constitute teacher assessment or real hand-tracking validation.
 
-Disahkan: enam objek, kunci kemajuan, jawapan kosong, lencana, kedua-dua sistem dan kawalan animasi, jawapan terbuka, simpan/muat semula, sejarah semasa main semula, lebar mudah alih 390px, tiada ralat JavaScript semasa perjalanan ini.
+## Source files
 
-## Batas semasa
+- `index.html`, `style.css`: existing UI with activity and assembly surfaces.
+- `js/art.js`: retained pixel artwork and original two scientific models.
+- `js/content.js`: four systems and component explanations.
+- `js/game.js`: existing game extended with synthesis, awards, mission flow and evidence.
+- `js/progress.js`: profile defaults, validation and legacy migration.
+- `js/science.js`: aquaponics and self-watering cutaways, assembly coordinates.
+- `js/assembly.js`: shared mouse, touch and hand placement validation.
+- `js/hands.js`: permission, MediaPipe, smoothing, calibration and cleanup.
+- `scripts/bundle.py`: standalone HTML generator.
+- `tests/game.test.cjs`, `tests/fallback.test.cjs`: browser journey and touch/fallback checks.
+- `assets/audio/manifest.json`: Malay narration recording checklist.
 
-Ini pelaksanaan awal Fasa 1; seni piksel menggunakan bentuk asli yang ringkas, belum mencapai perincian produksi permainan rujukan. Alya mempunyai idle, kelipan, lambaian dan gerakan mulut semasa suara; animasi badan gembira/terkejut/galakan/mengecap khusus belum lengkap. Paparan cap dan bunyi cap telah tersedia. NPC hadir melalui dialog berlabel; sprite NPC individu belum tersedia. Ketiga-tiga lokasi menggunakan asas bilik yang sama dengan kandungan berbeza.
+## Audio and remaining scope
 
-Sistem tanpa kitaran menunjukkan larutan statik dengan akar terendam; tiada aliran palsu. Sistem kitaran menunjukkan aliran dari pam ke palung dan kembali ke tangki. Tidak ada penilaian automatik bahawa penerangan murid benar.
+Subtitles, replay narration, mute, separate volume controls and background ducking are retained. Only `ms-MY` device voices are selected. Natural Malaysian female recordings are not supplied; missing audio falls back to subtitles without blocking play. Audio IDs for the added content are included in the manifest.
 
-Belum dibangunkan: dua stesen Misi 2 yang lain (Akuaponik dan Bekas Pengairan Kendiri), lencana Misi 2, Misi 3/4/Akhir, gerak isyarat kamera, Kad Pemilihan Sistem, penghasilan lembaran individu bercetak, suara wanita prarakam. Tiada tugasan lakaran SP 7.1.3 ditambah.
-
-Rujukan: PDF RPH RBTS3302 yang dibekalkan (9 November 2026), imej buku teks halaman 64–71 dan imej DSKP. Kandungan lampiran digunakan sebagai rujukan kurikulum, bukan arahan untuk mengatasi permintaan pembangunan pengguna.
+Misi 4 gameplay and Misi Akhir, final system-selection card, individual printed response-sheet generation, final art polish and professional audio remain outside this delivery. Reference sources are the user-supplied RPH, textbook pages 64–71 and DSKP excerpt. Open answers are not automatically scored.

@@ -15,10 +15,6 @@
       "text": "Pertanian bandar ialah aktiviti bercucuk tanam untuk menghasilkan tanaman makanan di sekitar rumah yang mempunyai ruang terhad. Penanaman boleh dijalankan secara konvensional atau menggunakan teknologi moden. Contohnya, sawi ditanam dalam pasu di balkoni rumah pangsa."
     },
     {
-      "file": "lab.mp3",
-      "text": "Selamat datang ke Pusat Teknologi Pertanian! Periksa komponen dua sistem kultur air. Bandingkan larutan yang statik dengan larutan yang dikitar semula."
-    },
-    {
       "file": "congrats.mp3",
       "text": "Tahniah! Kamu telah meneroka tiga kawasan dan mencatat penemuan. Kamu kini Peneroka Pertanian Bandar!"
     },
@@ -59,6 +55,10 @@
       "text": "Mak Cik Siti: Sisa dapur yang sesuai boleh dijadikan baja kompos. Hidroponik ialah contoh teknologi moden: akar mendapat nutrien daripada larutan nutrien tanpa menggunakan tanah."
     },
     {
+      "file": "lab.mp3",
+      "text": "Selamat datang ke Pusat Teknologi Pertanian! Periksa komponen empat sistem takungan. Bandingkan larutan yang statik dengan larutan yang dikitar semula."
+    },
+    {
       "file": "system-0.mp3",
       "text": "Larutan nutrien berada dalam takungan dalam keadaan statik, tidak dikitar semula. Akar terendam dalam larutan untuk menyerap nutrien. Tiada pam untuk mengitar larutan nutrien."
     },
@@ -97,6 +97,74 @@
     {
       "file": "system-1-3.mp3",
       "text": "Larutan mengalir kembali dari palung ke tangki nutrien untuk dikitar semula."
+    },
+    {
+      "file": "system-2.mp3",
+      "text": "Akuaponik menggabungkan ternakan ikan dengan tanaman. Bahan buangan ikan diuraikan; mikroorganisma menukarkan ammonia kepada nitrit dan kemudian nitrat yang boleh diserap tanaman. Pam membawa air bernutrien ke tanaman dan air kembali ke tangki ikan."
+    },
+    {
+      "file": "system-2-0.mp3",
+      "text": "Ikan menghasilkan bahan buangan. Air tangki membawa bahan ini ke bahagian penapisan dan mikroorganisma."
+    },
+    {
+      "file": "system-2-1.mp3",
+      "text": "Mikroorganisma bermanfaat menukar ammonia kepada nitrit, kemudian nitrat, iaitu nutrien yang boleh diserap oleh akar."
+    },
+    {
+      "file": "system-2-2.mp3",
+      "text": "Pam mengalirkan air dari tangki melalui bahagian mikroorganisma ke tanaman."
+    },
+    {
+      "file": "system-2-3.mp3",
+      "text": "Akar menyerap nutrien. Air mengalir kembali ke tangki ikan; ikan, mikroorganisma dan tanaman saling berkaitan."
+    },
+    {
+      "file": "system-3.mp3",
+      "text": "Air dari ruang air naik melalui bahan penyerap dalam ruang partikel kapilari ke medium tanaman melalui tindakan kapilari. Akar menyerap air daripada medium. Sistem ini tidak memerlukan pam."
+    },
+    {
+      "file": "system-3-0.mp3",
+      "text": "Menunjukkan aras air dalam takungan supaya kita tahu bila air perlu ditambah."
+    },
+    {
+      "file": "system-3-1.mp3",
+      "text": "Laluan mengisi air ke dalam takungan di bahagian bawah."
+    },
+    {
+      "file": "system-3-2.mp3",
+      "text": "Ruang medium tanaman menyokong akar dan menerima air daripada bahan kapilari."
+    },
+    {
+      "file": "system-3-3.mp3",
+      "text": "Bahan penyerap yang bersentuhan dengan air membawa air ke medium melalui tindakan kapilari."
+    },
+    {
+      "file": "system-3-4.mp3",
+      "text": "Takungan menyimpan bekalan air di bahagian bawah bekas."
+    },
+    {
+      "file": "system-3-5.mp3",
+      "text": "Air berlebihan keluar melalui lubang ini supaya aras air tidak meningkat sehingga membanjiri ruang medium."
+    },
+    {
+      "file": "congrats-1.mp3",
+      "text": "Tahniah! Kamu memperoleh lencana Peneroka Pertanian Bandar. Catatan kamu disimpan untuk semakan guru."
+    },
+    {
+      "file": "congrats-2.mp3",
+      "text": "Tahniah! Kamu memperoleh lencana Pakar Sistem Takungan. Catatan kamu disimpan untuk semakan guru."
+    },
+    {
+      "file": "congrats-3.mp3",
+      "text": "Tahniah! Kamu memperoleh lencana Pakar Makmal. Catatan kamu disimpan untuk semakan guru."
+    },
+    {
+      "file": "workshop.mp3",
+      "text": "Makmal Tani Pintar: pasang tiga komponen pada bekas. A ialah penanda aras air, B ialah saluran mengisi air, C menghubungkan ruang air dengan medium. Seret komponen atau pilih komponen kemudian sentuh ruang."
+    },
+    {
+      "file": "capillary-flow.mp3",
+      "text": "Bahan kapilari bersentuhan dengan air. Air naik melalui bahan ini ke medium melalui tindakan kapilari, tanpa pam. Perhatikan perjalanan air sebelum menerangkan fungsinya."
     }
   ]
 }

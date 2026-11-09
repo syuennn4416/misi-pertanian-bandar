@@ -1,1 +1,10 @@
-{"name":"misi-pertanian-bandar","private":true,"type":"module","scripts":{"start":"python3 -m http.server 8080 --bind 0.0.0.0","test":"node tests/game.test.cjs"}}
+{
+  "name": "misi-pertanian-bandar",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "python3 -m http.server 8080 --bind 0.0.0.0",
+    "test": "node tests/game.test.cjs && node tests/fallback.test.cjs",
+    "build": "python3 scripts/bundle.py"
+  }
+}
