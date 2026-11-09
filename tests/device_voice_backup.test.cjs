@@ -38,6 +38,7 @@ const assert=require('node:assert/strict');
   const backup=await page.evaluate(()=>JSON.parse(localStorage.getItem('misi-bandar-v2')));
   const payload={product:'misi-pertanian-bandar',format:1,mode:backup.mode,profiles:backup.profiles};
   await page.locator('#backupFile').setInputFiles({name:'sandaran.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(payload))});
+  await page.locator('#confirmImport').waitFor({state:'visible',timeout:5000});
   assert.match(await page.locator('#modalBody').innerText(),/Sahkan Import Sandaran/);
   await page.locator('#cancelImport').click();
   await page.locator('#book').click();
