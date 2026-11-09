@@ -165,6 +165,102 @@
     {
       "file": "capillary-flow.mp3",
       "text": "Bahan kapilari bersentuhan dengan air. Air naik melalui bahan ini ke medium melalui tindakan kapilari, tanpa pam. Perhatikan perjalanan air sebelum menerangkan fungsinya."
+    },
+    {
+      "file": "repair-intro.mp3",
+      "text": "Alya menerima panggilan kecemasan! Dua sistem di pusat pertanian tidak membekalkan air dengan baik. Mari perhati, kenal pasti punca, ramal, baiki dan jelaskan."
+    },
+    {
+      "file": "repair-0.mp3",
+      "text": "Mengapakah larutan nutrien tidak dapat mengalir dalam sistem ini?"
+    },
+    {
+      "file": "repair-fixed-0.mp3",
+      "text": "Pam menolak larutan nutrien dari tangki melalui salur air masuk ke palung tanaman. Larutan kembali melalui salur air keluar ke tangki. Tanpa pam hidup, kitaran tidak berjalan. Animasi dipercepat: pemulihan tanaman berlaku secara beransur-ansur, bukan serta-merta."
+    },
+    {
+      "file": "repair-hint-0.mp3",
+      "text": "Periksa suis pam. Tangki masih mempunyai larutan, tetapi apakah yang menolak larutan ke atas?"
+    },
+    {
+      "file": "repair-0-0.mp3",
+      "text": "Suis pam berada pada kedudukan MATI. Pam tidak menolak larutan nutrien."
+    },
+    {
+      "file": "repair-0-1.mp3",
+      "text": "Tangki masih mengandungi larutan nutrien. Kekurangan larutan bukan punca masalah ini."
+    },
+    {
+      "file": "repair-0-2.mp3",
+      "text": "Salur tersambung, tetapi tiada aliran dipam ke atas."
+    },
+    {
+      "file": "repair-0-3.mp3",
+      "text": "Akar tidak menerima bekalan larutan yang beredar dari tangki."
+    },
+    {
+      "file": "repair-0-4.mp3",
+      "text": "Salur kembali tersambung ke tangki. Kitaran terhenti apabila pam mati."
+    },
+    {
+      "file": "repair-1.mp3",
+      "text": "Air masih terdapat di dalam takungan. Mengapakah medium tanaman tidak menerima air?"
+    },
+    {
+      "file": "repair-fixed-1.mp3",
+      "text": "Bahan kapilari mesti bersentuhan dengan air. Tindakan kapilari membawa air dari ruang air melalui bahan penyerap ke medium tanaman dan akar, tanpa menggunakan pam. Animasi dipercepat: pemulihan tanaman berlaku secara beransur-ansur, bukan serta-merta."
+    },
+    {
+      "file": "repair-hint-1.mp3",
+      "text": "Air masih ada. Adakah bahan penyerap benar-benar bersentuhan dengan permukaan air?"
+    },
+    {
+      "file": "repair-1-0.mp3",
+      "text": "Penanda menunjukkan air masih ada di bawah bekas."
+    },
+    {
+      "file": "repair-1-1.mp3",
+      "text": "Bekalan air belum habis. Perhatikan jarak antara air dan bahan kapilari."
+    },
+    {
+      "file": "repair-1-2.mp3",
+      "text": "Hujung bahan kapilari terangkat dan tidak menyentuh air. Terdapat ruang udara di antaranya."
+    },
+    {
+      "file": "repair-1-3.mp3",
+      "text": "Medium kering kerana bahan kapilari tidak dapat menyerap air daripada takungan."
+    },
+    {
+      "file": "final-0.mp3",
+      "text": "Tahniah! Kini, buktikan pengetahuan kamu melalui tiga cabaran terakhir! Terangkan maksud pertanian bandar dan berikan satu contoh yang sesuai."
+    },
+    {
+      "file": "final-1.mp3",
+      "text": "Jelaskan cara berfungsi kedua-dua sistem penanaman ini dalam membekalkan air atau nutrien kepada tanaman. Terangkan pam dan kitaran larutan, serta bahan kapilari dan tindakan kapilari."
+    },
+    {
+      "file": "final-2.mp3",
+      "text": "Seorang penduduk rumah pangsa mempunyai balkoni yang kecil dan ingin menanam sayur-sayuran. Pilih satu sistem penanaman secara takungan yang sesuai dan berikan satu alasan bagi pilihan kamu."
+    },
+    {
+      "file": "congrats-4.mp3",
+      "text": "Syabas! Kamu berjaya mengenal pasti punca masalah dan memulihkan kedua-dua sistem penanaman!"
+    },
+    {
+      "file": "congrats-5.mp3",
+      "text": "Tahniah! Kamu memperoleh lencana Wira Pertanian Bandar. Catatan kamu disimpan untuk semakan guru."
+    },
+    {
+      "file": "ending.mp3",
+      "text": "Tahniah, Wira Pertanian Bandar! Dalam pembelajaran seterusnya, kamu akan menggunakan sistem yang dipilih untuk menghasilkan lakaran reka bentuk."
+    },
+    {
+      "file": "repair-note-0.mp3",
+      "text": "Pam menolak larutan nutrien dari tangki melalui salur air masuk ke palung tanaman. Larutan kembali melalui salur air keluar ke tangki. Tanpa pam hidup, kitaran tidak berjalan."
+    },
+    {
+      "file": "repair-note-1.mp3",
+      "text": "Bahan kapilari mesti bersentuhan dengan air. Tindakan kapilari membawa air dari ruang air melalui bahan penyerap ke medium tanaman dan akar, tanpa menggunakan pam."
     }
   ]
 }
