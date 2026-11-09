@@ -51,6 +51,17 @@ Network dependencies, loaded only when hand control is activated:
 
 Permit `cdn.jsdelivr.net` and `storage.googleapis.com` in restrictive networks. HTTPS or localhost and browser camera permission are required. This feature is **not fully offline**. No camera hardware was available in the development environment; the actual browser returned “Requested device not found”. Real hand tracking, pinch accuracy and physical calibration remain unverified. The model host was also blocked by the cloud network policy. The JS version URL returned HTTP 200. Fallback and touch completion were tested; no synthetic input is represented as successful real-camera testing.
 
+## Phase 4 science and learning-record improvements
+
+- **Misi 2:** All four system diagrams now have visual animated learning stages, synchronized with the `Ikuti Aliran Sistem` panel in the right-hand task rail. `Sebelum`/`Seterusnya` jump through the water/nutrient stages without skipping the learning tasks. The existing Pause/Replay and component hotspots remain.
+- **Misi 3:** The wick/water-particle animation now more clearly illustrates movement from the reservoir to the medium and root without a pump.
+- **Misi 4:** The broken pump is visibly labelled `PAM MATI` before repair; after correction the full flow becomes animated. The disconnected wick continues to block capillary flow until repaired.
+- **Buku Misi Pertanian:** `Kad Ilmu` (unlocked notes), `Lencana & Rekod` (badges and attempts) and `Rubrik PBD` (activity assessment) are now separate views. A printable `Lembaran Respons Individu` matches the final challenges.
+- **Teacher assessment:** `Rubrik PBD` follows the user's RPH Lampiran 2 checklist (five observations) and Lampiran 3 activity rubric (scores 1–3) for SP 7.1.1 and SP 7.1.2. The individual profile stores *only teacher-entered* rubric scores and comments. `Mod Kelas` displays the criteria but does not turn a class discussion into 30 fictional individual marks. Saved evaluations appear in `Laporan Pembelajaran`. These scores are NOT official DSKP `Tahap Penguasaan` and are not automatically inferred from badges.
+- **F/G verification:** Old saves load with blank optional assessment fields without deleting mission progress. The curriculum scope is unchanged: the game teaches the meaning of urban agriculture and how reservoir-based systems work, not the separate SP 7.1.3 design-sketch activity. The DSKP KSSR RBT Tahun 5 (Semakan 2017) at section 7.0 confirms the SP 7.1.1 and SP 7.1.2 wording.
+
+**Validation limits:** Static bundled-JavaScript parse and independent science/rubric logic checks passed. The browser E2E suite is provided in `tests/learning.test.cjs` and `tests/science_pbd.test.cjs` but must still be executed and inspected against a live localhost/HTTPS deployment; camera hardware and device-specific speech voices have not been verified. No Category C voice or dialogue code was altered by these changes.
+
 ## Tests
 
 The supplied cloud environment provides Playwright and Chromium. Elsewhere install Playwright as a development test tool (`npm install --no-save playwright`) and Chromium, setting `CHROMIUM_PATH` to the browser executable if it is not `/usr/bin/chromium`.
