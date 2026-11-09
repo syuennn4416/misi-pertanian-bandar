@@ -1,7 +1,7 @@
 import {repairCases,finalPrompts,finalTitles} from './phase3-content.js';
 import {systems,pbdChecklist,pbdRubric} from './content.js';
 import {freshCase} from './progress.js';
-import {drawScience} from './science.js';
+import {drawScience,drawFlowOverlay} from './science.js';
 import {renderer} from './art.js';
 export function createPhase3(api){
  const {$,btn,spot,say,save,go,modal,esc,toast,award,answerForm}=api;
@@ -62,7 +62,7 @@ export function createPhase3(api){
 }
 function drawRepair(canvas,i,repaired,t,art){
  const c=canvas.getContext('2d'),rect=(x,y,w,h,color)=>{c.fillStyle=color;c.fillRect(x,y,w,h)};
- if(i===0)art.draw('sim1',repaired?t:0);else{drawScience(canvas,'self',repaired?t:0,repaired?['level','inlet','capillary']:['level','inlet']);if(!repaired){rect(302,205,36,28,'#b5a470');rect(304,234,32,12,'#f2eed9');c.fillStyle='#a04738';c.font='12px sans-serif';c.fillText('Tidak menyentuh air',345,226)}}
+ if(i===0){art.draw('sim1',repaired?t:0);if(repaired)drawFlowOverlay(canvas,1,t);else{rect(460,54,144,24,'#9e473d');c.fillStyle='#fff9e4';c.font='bold 14px sans-serif';c.fillText('PAM MATI',480,71)}}else{drawScience(canvas,'self',repaired?t:0,repaired?['level','inlet','capillary']:['level','inlet']);if(repaired)drawFlowOverlay(canvas,3,t);if(!repaired){rect(302,205,36,28,'#b5a470');rect(304,234,32,12,'#f2eed9');c.fillStyle='#a04738';c.font='12px sans-serif';c.fillText('Tidak menyentuh air',345,226)}}
  // Replace foliage with a gradual schematic recovery, explicitly time-lapsed.
  const xs=i===0?[225,330,435]:[320],base=i===0?115:139;const recovery=repaired?Math.min(t/8,1):0;
  for(const x of xs){rect(x-20,base-44,44,43,'#f2eed9');rect(x,base-28,3,29,'#648448');c.save();c.translate(x,base-18);c.rotate((1-recovery)*.8);rect(-17,-6,17,8,recovery>.6?'#5ca451':'#a5a05e');c.restore();c.save();c.translate(x+3,base-26);c.rotate(-(1-recovery)*.8);rect(0,-6,17,9,recovery>.6?'#5ca451':'#a5a05e');c.restore()}
