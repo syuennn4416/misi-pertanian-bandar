@@ -1,5 +1,5 @@
 // Original, royalty-free procedural music and game SFX; no third-party audio assets required.
-// Voice preference: existing recordings when present, otherwise device ms-MY speech synthesis.
+// User chooses language, a browser-installed voice, and speaking rate. No forced voice fallback.
 export class AudioDirector {
  constructor(getPrefs, onSpeaking, onStatus) {
   this.getPrefs=getPrefs; this.onSpeaking=onSpeaking; this.onStatus=onStatus;
@@ -87,52 +87,68 @@ export class AudioDirector {
   if(!this.activated){this.onStatus('Tekan Mula untuk mengaktifkan suara dan muzik.');return}
   this.speak(this.lastText,this.lastId,false);
  }
+ // The list comes from the visitor's actual browser; Google voices cannot be invented or downloaded here.
+ availableVoices(){
+  try { return [...(window.speechSynthesis?.getVoices?.()||[])].filter(v=>v&&v.lang&&v.name); }
+  catch { return [] }
+ }
+ availableLanguages(){
+  const preferred=['id-ID','ms-MY','en-US','zh-CN'];
+  const byLang=new Map(preferred.map(x=>[x.toLowerCase(),x]));
+  for(const v of this.availableVoices())byLang.set(v.lang.replace('_','-').toLowerCase(),v.lang.replace('_','-'));
+  return [...byLang.values()].sort((a,b)=>{
+   const ia=preferred.indexOf(a),ib=preferred.indexOf(b);
+   return (ia<0?100:ia)-(ib<0?100:ib)||a.localeCompare(b);
+  });
+ }
+ voicesFor(lang){
+  const all=this.availableVoices(),l=(lang||'id-ID').replace('_','-').toLowerCase();
+  const exact=all.filter(v=>v.lang.replace('_','-').toLowerCase()===l);
+  return exact.length?exact:all.filter(v=>v.lang.replace('_','-').toLowerCase().split('-')[0]===l.split('-')[0]);
+ }
+ voiceKey(v){return [v.lang,v.voiceURI||'',v.name].join('::')}
+ selectedVoice(){
+  const p=this.getPrefs(),lang=p.voiceLanguage||'id-ID',voices=this.voicesFor(lang);
+  if(!voices.length)return null;
+  if(p.voiceId&&p.voiceId!=='auto')return voices.find(v=>this.voiceKey(v)===p.voiceId)||null;
+  const google=voices.find(v=>/google/i.test(v.name)&&/female|woman|wanita|perempuan|siti|nur|amira|yasmin|putri|indonesia/i.test(v.name));
+  return google||voices.find(v=>/google/i.test(v.name))||voices.find(v=>/female|woman|wanita|perempuan|siti|nur|amira|yasmin|putri/i.test(v.name))||voices[0];
+ }
+ voiceSummary(){
+  const p=this.getPrefs(),voice=this.selectedVoice();
+  return voice?voice.name+' ('+voice.lang+')':('Tiada suara tersedia untuk '+(p.voiceLanguage||'id-ID'));
+ }
  speak(text=this.lastText,id=this.lastId,manual=true){
   if(manual)this.activate();
   this.stopVoice();
   if(this.getPrefs().muted){this.onStatus('Audio dibisukan dalam Tetapan.');return}
   if(!text){this.onStatus('Tiada dialog untuk dibaca.');return}
-  const token=this.voiceToken;
-  const synth=window.speechSynthesis;
-  const all=synth?.getVoices?.()||[];
-  const matches=all.filter(v=>/^ms([-_]MY)?$/i.test(v.lang));
-  const preferred=matches.find(v=>/female|woman|wanita|perempuan|siti|nur|amira|yasmin|google/i.test(v.name))||matches[0]||null;
-  if(preferred){this.nativeSpeech(text,token,preferred,true);return}
-  if(id&&!this.missingRecordings.has(id)&&location.protocol!=='file:'){this.tryRecording(id,text,token);return}
-  this.nativeSpeech(text,token,null,false);
+  const voice=this.selectedVoice();
+  if(!voice){
+   this.onStatus('Suara pilihan tidak tersedia pada peranti ini. Buka Tetapan untuk memilih bahasa dan suara lain. Sari kata masih tersedia.');
+   return
+  }
+  this.nativeSpeech(text,this.voiceToken,voice);
  }
- tryRecording(id,text,token){
-  const safe=/^[a-zA-Z0-9-]+$/.test(id)?id:null;
-  if(!safe){this.nativeSpeech(text,token,null,false);return}
-  const a=new Audio('assets/audio/'+safe+'.mp3');
-  this.currentAudio=a; a.preload='auto';a.volume=this.getPrefs().vol?.voice??.8;
-  let fallback=false;
-  const fail=()=>{
-   if(fallback||!this._isCurrent(token))return;
-   fallback=true;this.missingRecordings.add(safe);this.currentAudio=null;
-   this.nativeSpeech(text,token,null,false);
-  };
-  a.onended=()=>{if(this._isCurrent(token)){this.currentAudio=null;this._markSpeaking(false);this.onStatus('Bacaan selesai. Tekan Dengar Semula untuk ulang.')}}
-  a.onerror=fail;
-  a.play().then(()=>{if(this._isCurrent(token)){this._markSpeaking(true);this.onStatus('Alya sedang bercakap (rakaman ms-MY).')}}).catch(fail);
- }
- nativeSpeech(text,token,voice,verified){
+ nativeSpeech(text,token,voice){
   const synth=window.speechSynthesis;
   if(!synth||typeof window.SpeechSynthesisUtterance!=='function'){
-   this._markSpeaking(false);this.onStatus('Suara ms-MY tidak tersedia. Baca sari kata atau sediakan fail rakaman.');return
+   this._markSpeaking(false);this.onStatus('Pelayar ini tidak menyokong pembacaan suara. Sari kata masih tersedia.');return
   }
   try{
-   const u=new window.SpeechSynthesisUtterance(text);
-   u.lang='ms-MY';u.rate=.94;u.pitch=1.06;u.volume=this.getPrefs().vol?.voice??.8;
-   if(voice)u.voice=voice;
+   const p=this.getPrefs(),u=new window.SpeechSynthesisUtterance(text);
+   u.voice=voice;u.lang=voice.lang||p.voiceLanguage||'id-ID';
+   u.rate=Math.min(1.5,Math.max(.65,Number(p.voiceRate)||1.1));
+   u.pitch=1;u.volume=p.vol?.voice??.8;
    this.utterance=u;
-   u.onstart=()=>{if(this._isCurrent(token)){this._markSpeaking(true);this.onStatus(verified?'Alya sedang bercakap (suara ms-MY peranti).':'Alya sedang bercakap (suara bergantung pada peranti).')}}
+   u.onstart=()=>{if(this._isCurrent(token)){this._markSpeaking(true);this.onStatus('Alya sedang bercakap menggunakan '+voice.name+' ('+u.lang+').')}}
    u.onend=()=>{if(this._isCurrent(token)){this.utterance=null;this._markSpeaking(false);this.onStatus('Bacaan selesai. Tekan Dengar Semula untuk ulang.')}}
-   u.onerror=()=>{if(this._isCurrent(token)){this.utterance=null;this._markSpeaking(false);this.onStatus('Bacaan tidak tersedia. Sila baca sari kata atau cuba Dengar Semula.')}}
+   u.onerror=()=>{if(this._isCurrent(token)){this.utterance=null;this._markSpeaking(false);this.onStatus('Suara pilihan tidak dapat dimainkan. Cuba pilih suara lain dalam Tetapan.')}}
    synth.speak(u);
-   this.onStatus(verified?'Memulakan suara ms-MY…':'Mencuba suara peranti. Suara wanita ms-MY tidak dijamin.');
+   this.onStatus('Memulakan '+voice.name+' ('+u.lang+')…');
   }catch{
-   this._markSpeaking(false);this.onStatus('Suara tidak tersedia. Baca sari kata.');
+   this._markSpeaking(false);this.onStatus('Suara tidak tersedia. Cuba suara lain dalam Tetapan.');
   }
  }
+
 }
