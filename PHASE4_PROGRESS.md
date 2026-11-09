@@ -16,11 +16,19 @@ The repository's default branch was `feature/phase2-missions` at the beginning o
 - **A — Scenes:** `Rumah Pangsa`, `Rumah Teres` and `Kebun Komuniti` now have distinct Canvas pixel backgrounds. **Alya's character source, palette and drawing function were not modified.**
 - The downloadable `Misi-Pertanian-Bandar.html` is regenerated from the modular source.
 
+## Phase 4 layout update — integrated 16:9 player (latest)
+- **D — Main ratio:** `#gameShell` is now a true 16:9 **whole desktop/tablet-landscape game frame**, containing a 16:9 Canvas, task rail and action toolbar. The page header sits outside this player.
+- **D — Alya dialogue:** original Alya pixel sprite is preserved. Her dialogue is anchored **upper-left inside the game**, collapsed to a brief readable line by default to avoid obscuring scientific hotspots. `Lihat lagi` expands the full text; `Ringkaskan` collapses it again. `Dengar Semula` remains available within the expanded view; narration/captions continue automatically as before.
+- **B/D — Camera placement:** Misi 3 camera remains an independent 4:3 preview in the right-hand task rail for desktop and tablet landscape; on narrow/portrait screens it moves below the 16:9 game viewport. It never covers assembly targets.
+- **D — Accessibility trade-off:** A phone held in portrait cannot display the entire lesson legibly inside a fixed-height 16:9 page. On screens at/below 780px, **the play canvas remains 16:9**, while controls, long activities and camera become scrollable stacked sections. Tablet/phone landscape is recommended where possible.
+- **D — UI:** Long mission activities and answer forms have a dedicated scrollable side rail on desktop; action buttons have a separate bottom rail inside the frame. The upper-left dialogue is compact by default so components around y=32% remain accessible.
+- **Verification:** Consolidated `Misi-Pertanian-Bandar.html` JavaScript parsed successfully and includes the five existing missions, original Alya rendering, audio system and camera. The updated responsive test now checks 16:9 frame, mobile game viewport and expandable dialogue. **Real device layout/playwright pass not yet confirmed in this session**.
+
 ## Remaining Phase 4 backlog
 - **A:** Further polish of map perspective, furniture, motion and pixel coherence; visually inspect all three new scenes at projector and phone sizes.
 - **B:** Fine-tune hotspot coordinates on real devices; improve the visual teaching of aquaponics microbes and capillary movement; test real hand gesture pinch on HTTPS.
 - **C:** A natural **recorded** ms-MY female voice is still pending: the existing asset manifest lists proposed files, not verified MP3 audio. Current browser voice output is best-effort and varies by device. Verify playback on desktop, iPad and Android/iOS; replace TTS with authorized recordings when available.
-- **D:** Further projector typography and phone/tablet ergonomic polish; responsive camera preview and baseline device layouts are implemented but require real hardware tests.
+- **D:** Recheck phone landscape vs portrait, tablet screen rotations, classroom projector readability, small-screen title/dialogue overlap and touch hotspots at actual device DPI. The integrated 16:9 layout is implemented but still requires real hardware regression.
 - **E:** Better illustrated Buku Misi, replay navigation and optional teacher assessment rubric; do not equate medals with PBD mastery.
 - **F:** Full save/replay verification and regression testing after merging; preserve user data and keep a new user's state empty.
 - **G:** Review terminology and accurate technical diagrams against the supplied textbook/DSKP. The new definition is an editorial clarification, not a verbatim textbook quotation.
