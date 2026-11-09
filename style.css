@@ -242,7 +242,7 @@ header{max-width:1400px}
 /* Phase 4 assembly controls: keep draggable component tray clear of the upper-left
    Alya bubble and A/B/C targets. The same validator works for pointer, touch and hand. */
 #stage:has(#assemblyBoard) #assemblyBoard .parts-tray{
-  top:29%!important;bottom:auto!important;left:3%!important;right:auto!important;
+  top:23%!important;bottom:auto!important;left:3%!important;right:auto!important;
   max-width:94%;display:flex;flex-wrap:wrap;gap:5px;z-index:6
 }
 #stage:has(#assemblyBoard) #assemblyBoard .parts-tray button{
