@@ -26,7 +26,7 @@ function speak(){stopVoice();if(state.muted){toast('Audio dibisukan dalam Tetapa
 function tone(freq=620){if(state.muted)return;try{ctx??=new AudioContext();ctx.resume();const o=ctx.createOscillator(),g=ctx.createGain();o.type='sine';o.frequency.value=freq;g.gain.setValueAtTime(state.vol.sfx*.08,ctx.currentTime);g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+.15);o.connect(g).connect(ctx.destination);o.start();o.stop(ctx.currentTime+.16)}catch{}}
 function music(){try{ctx??=new AudioContext();ctx.resume();if(musicGain)return;musicGain=ctx.createGain();musicGain.gain.value=state.muted?0:state.vol.music*.08;musicGain.connect(ctx.destination);[261.63,329.63,392].forEach(f=>{const o=ctx.createOscillator();o.type='sine';o.frequency.value=f;o.connect(musicGain);o.start()})}catch{}}
 function unlock(id){if(!state.notes.includes(id))state.notes.push(id);save()}
-function go(next){if(next==='ending'&&![1,2,3,4,5].every(n=>state.badges.includes(n))){toast('Lengkapkan kelima-lima misi sebelum menamatkan permainan.');return}const required=/^repair[01]$/.test(next)||next==='gate4'?3:/^final[0-2]$/.test(next)?4:next==='ending'?5:0;if(required&&state.mode!=='kelas'&&!state.badges.includes(required)){toast('Selesaikan misi sebelumnya dahulu.');return}$('#assemblyBoard')?.remove();hands?.stop();hands=null;assemblyUI=null;$('#activity').replaceChildren();stopVoice();scene=next;paused=false;simTime=0;if(next!=='home'&&!review){state.scene=next;state.started=true;save()}$('#spots').replaceChildren();$('#controls').replaceChildren();$('#title').innerHTML='';$('#objective').textContent='';$('#status').textContent=`${state.mode==='kelas'?'Mod Kelas':'Mod Kendiri'} · ${state.badges.length}/5 lencana`;
+function go(next){if(next==='ending'&&![1,2,3,4,5].every(n=>state.badges.includes(n))){toast('Lengkapkan kelima-lima misi sebelum menamatkan permainan.');return}const required=/^repair[01]$/.test(next)||next==='gate4'?3:/^final[0-2]$/.test(next)?4:next==='ending'?5:0;if(required&&state.mode!=='kelas'&&!state.badges.includes(required)){toast('Selesaikan misi sebelumnya dahulu.');return}$('#assemblyBoard')?.remove();hands?.stop();hands=null;assemblyUI=null;$('#cameraPanel').hidden=true;$('#playWorkspace').classList.remove('camera-active');$('#camera').hidden=true;$('#cameraPlaceholder').hidden=false;$('#cameraControls').replaceChildren();$('#cameraIndicator').textContent='Kamera dimatikan';$('#activity').replaceChildren();stopVoice();scene=next;paused=false;simTime=0;if(next!=='home'&&!review){state.scene=next;state.started=true;save()}$('#spots').replaceChildren();$('#controls').replaceChildren();$('#title').innerHTML='';$('#objective').textContent='';$('#status').textContent=`${state.mode==='kelas'?'Mod Kelas':'Mod Kendiri'} · ${state.badges.length}/5 lencana`;
 if(next==='home'){review=false;$('#title').innerHTML='<span class="eyebrow">PENGEMBARAAN RBT • TAHUN 5</span><h1>Misi Pertanian<br>Bandar</h1><p>Jelajah Sistem Penanaman Secara Takungan</p>';$('#objective').textContent='Selamat datang ke Bandar Hijau · Fasa 3';say('Hai, saya Alya! Ruang rumah kita kecil, tetapi impian kebun kita besar. Mari bantu jiran meneroka pertanian bandar.','intro');btn('Mula Permainan Baharu',newGame,'#controls','primary');btn('Sambung Permainan',()=>{music();review=false;go(state.scene||'map')}).disabled=!state.started;btn('Pilih Misi / Main Semula',missionMenu);btn('Buku Misi Pertanian',book);btn('Mod Ulang Kaji',()=>{review=true;go('lab')});btn('Tetapan',settings)}
 else if(next==='map'){say('Jiran kita mahu menanam sayur, tetapi ruang rumah terhad. Terokai tiga tempat dan periksa dua objek di setiap tempat. Kemudian ceritakan penemuan kamu.','map');$('#objective').textContent=`Misi 1 · Misteri Pertanian Bandar · ${places.filter(p=>p.items.every((_,i)=>state.visited.includes(p.id+i))).length}/3 tempat diterokai`;spot('Rumah Pangsa',19,49,()=>go('pangsa'));spot('Rumah Teres',73,51,()=>go('teres'));spot('Kebun Komuniti',22,91,()=>go('kebun'));spot(state.badges.length?'Pusat Teknologi':'Pusat Teknologi · terkunci',72,91,()=>state.badges.length||state.mode==='kelas'?go('lab'):toast('Lengkapkan Misi 1 untuk membuka pusat teknologi.'));btn('Catat Penemuan',answer1,'#controls','primary');btn('Petunjuk',()=>{state.hints.push({mission:1,time:Date.now()});save();say(definition+' Contohnya, sawi ditanam dalam pasu di balkoni rumah pangsa.','definition')});btn('Pilih Misi',missionMenu)}
 else if(places.some(p=>p.id===next)){const p=places.find(p=>p.id===next);say(`${p.npc}: ${p.text}`,p.id);$('#objective').textContent='Misi 1 · '+p.topic;for(let i=0;i<2;i++)spot((state.visited.includes(p.id+i)?'✓ ':'')+p.items[i][0],i?71:25,i?49:73,()=>{if(!state.visited.includes(p.id+i))state.visited.push(p.id+i);unlock(p.id);go(p.id);say(`${p.npc}: ${p.items[i][1]}`,p.id+'-'+i)});btn('Kembali ke Bandar',()=>go('map'),'#controls','primary')}
@@ -50,17 +50,50 @@ function settings(){modal(`<h2>Tetapan</h2><label>Mod permainan <select id="mode
 $('#home').onclick=()=>go('home');$('#book').onclick=book;$('#settings').onclick=settings;$('#close').onclick=()=>$('#modal').close();$('#listen').onclick=speak;
 function frame(t){const delta=Math.min((t-last)/1000,.1);last=t;if(!paused)simTime+=delta;if(phase3.draw(scene,simTime,$('#world'),art)){}else if(scene==='sim2')drawScience($('#world'),'aqua',simTime);else if(scene==='sim3'||scene==='flow')drawScience($('#world'),'self',simTime);else if(scene==='workshop')drawScience($('#world'),'self',0,state.assembly,true);else art.draw(scene,scene.startsWith('sim')?simTime:t/1000);if(scene==='flow'&&simTime>=6&&!flowCompleted){flowCompleted=true;state.simulationSeen=true;save();$('#explainLab').disabled=false;}if($('#stampAlya')){const stampArt=renderer($('#stampAlya'));stampArt.clear();stampArt.alya(40,50,t/1000,2.7,'stamp');}portrait.clear();portrait.alya(40,50,t/1000,2.7,talking?'talk':Math.floor(t/3000)%2?'wave':'idle');requestAnimationFrame(frame)}go('home');requestAnimationFrame(frame);
 function workshop(){
- say('Makmal Tani Pintar: pasang tiga komponen pada bekas. A ialah penanda aras air, B ialah saluran mengisi air, C menghubungkan ruang air dengan medium. Seret komponen atau pilih komponen kemudian sentuh ruang.','workshop');$('#objective').textContent='Misi 3 · Pasang tiga komponen';
- $('#activity').innerHTML='<div id="assemblyBoard"></div><p id="assemblyFeedback" role="status">Pilih komponen dan letakkan pada ruang yang sesuai.</p><div id="cameraControls"></div><video id="camera" muted playsinline hidden></video><p id="cameraStatus" role="status">Tetikus / Sentuhan aktif. Kamera belum dihidupkan.</p>';
- // Board is over the cutaway; large targets use the same normalized coordinates.
+ say('Makmal Tani Pintar: pasang tiga komponen pada bekas. A ialah penanda aras air, B ialah saluran mengisi air, C menghubungkan ruang air dengan medium. Seret komponen atau pilih komponen kemudian sentuh ruang.','workshop');
+ $('#objective').textContent='Misi 3 · Pasang tiga komponen';
+ $('#activity').innerHTML='<div id="assemblyBoard"></div><p id="assemblyFeedback" role="status">Pilih komponen dan letakkan pada ruang yang sesuai.</p>';
+ const panel=$('#cameraPanel'),video=$('#camera'),placeholder=$('#cameraPlaceholder');
+ panel.hidden=false;$('#playWorkspace').classList.add('camera-active');
+ video.hidden=true;placeholder.hidden=false;$('#cameraIndicator').textContent='Kamera dimatikan';
+ $('#cameraStatus').textContent='Tetikus / Sentuhan tersedia. Aktifkan Kawalan Tangan untuk melihat kamera.';
  const board=$('#assemblyBoard');$('#stage').append(board);
- assemblyUI=mountAssembly(board,state.assembly,()=>{save();$('#runSimulation').disabled=state.assembly.length!==3},s=>$('#assemblyFeedback').textContent=s);
+ assemblyUI=mountAssembly(board,state.assembly,()=>{save();$('#runSimulation').disabled=state.assembly.length!==3},message=>$('#assemblyFeedback').textContent=message);
  const run=btn('Jalankan Simulasi',()=>go('flow'));run.id='runSimulation';run.disabled=state.assembly.length!==3;
- btn('Pasang Semula',()=>{state.assembly=[];save();go('workshop')});btn('Kembali ke Pusat',()=>go('lab'));
- const status=s=>{if($('#cameraStatus'))$('#cameraStatus').textContent=s};
- btn('Kawalan Tangan',()=>{hands?.stop();$('#camera').hidden=false;hands=new HandControl($('#camera'),status,(x,y,phase)=>{if(!assemblyUI)return;if(phase==='lost'){assemblyUI.hide();return}const box=board.getBoundingClientRect();assemblyUI.hand(x*box.width,y*box.height,phase)});hands.start()},'#cameraControls');
- btn('Tetikus / Sentuhan',()=>{hands?.stop();assemblyUI?.hide();$('#camera').hidden=true;status('Tetikus / Sentuhan aktif. Kamera dimatikan.')},'#cameraControls');
- btn('Kalibrasi Semula',()=>hands?.detector?hands.calibrate():status('Hidupkan Kawalan Tangan dahulu.'),'#cameraControls');
- btn('Cuba Semula Kamera',()=>{if(hands)hands.start();else status('Pilih Kawalan Tangan untuk memberi kebenaran kamera.')},'#cameraControls');
+ btn('Pasang Semula',()=>{state.assembly=[];save();go('workshop')});
+ btn('Kembali ke Pusat',()=>go('lab'));
+ const status=message=>{
+   $('#cameraStatus').textContent=message;
+   if(message.startsWith('Kamera tidak tersedia')||message.startsWith('Pengecaman terhenti')){
+     video.hidden=true;placeholder.hidden=false;$('#cameraIndicator').textContent='Kamera tidak tersedia';
+   }else if(message.includes('Sedia.')){
+     $('#cameraIndicator').textContent='Tangan dikesan';
+   }else if(message.includes('Kalibrasi')||message.includes('Meminta kamera')||message.includes('Memuatkan')){
+     $('#cameraIndicator').textContent='Memulakan kamera…';
+   }else if(message.includes('Tangan tidak dikesan')){
+     $('#cameraIndicator').textContent='Cari tangan';
+   }
+ };
+ const enableHand=()=>{
+   hands?.stop();
+   video.hidden=false;placeholder.hidden=true;
+   $('#cameraIndicator').textContent='Memulakan kamera…';
+   hands=new HandControl(video,status,(x,y,phase)=>{
+     if(!assemblyUI)return;
+     if(phase==='lost'){assemblyUI.hide();return}
+     const box=board.getBoundingClientRect();
+     assemblyUI.hand(x*box.width,y*box.height,phase)
+   });
+   hands.start();
+ };
+ btn('Kawalan Tangan',enableHand,'#cameraControls');
+ btn('Tetikus / Sentuhan',()=>{
+   hands?.stop();hands=null;assemblyUI?.hide();
+   video.hidden=true;placeholder.hidden=false;
+   $('#cameraIndicator').textContent='Kamera dimatikan';
+   status('Tetikus / Sentuhan aktif. Kamera dimatikan.');
+ },'#cameraControls');
+ btn('Kalibrasi Semula',()=>hands?.detector?hands.calibrate():status('Aktifkan Kawalan Tangan terlebih dahulu.'),'#cameraControls');
+ btn('Cuba Semula Kamera',enableHand,'#cameraControls');
 }
 function flowScene(){if(state.assembly.length!==3){go('workshop');return}flowCompleted=state.simulationSeen;$('#objective').textContent='Ruang air → partikel kapilari → medium → akar';say('Bahan kapilari bersentuhan dengan air. Air naik melalui bahan ini ke medium melalui tindakan kapilari, tanpa pam. Perhatikan perjalanan air sebelum menerangkan fungsinya.','capillary-flow');const pause=btn('Jeda',()=>{paused=!paused;pause.textContent=paused?'Mainkan':'Jeda'});btn('Ulang Animasi',()=>{simTime=0;paused=false;pause.textContent='Jeda'});const explain=btn('Jelaskan Tindakan Kapilari',()=>answerForm('misi3','1. Apakah fungsi ruang partikel kapilari? 2. Bagaimanakah air bergerak dari takungan ke medium tanaman?',()=>award(3,'gate4')));explain.id='explainLab';explain.disabled=!flowCompleted;btn('Periksa Semula Komponen',()=>go('workshop'))}
