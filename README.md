@@ -1,6 +1,14 @@
-# Misi Pertanian Bandar — Phase 3
+# Misi Pertanian Bandar — Phase 4 (Draft: 16:9 Integrated Game)
 
 Continuation of the existing HTML5/Canvas game, in Bahasa Melayu Malaysia. Curriculum: RBT Tahun 5, SP 7.1.1 and 7.1.2. Artwork, map, Alya and audio interfaces are retained. All five missions are playable. No SP 7.1.3 drawing task is included.
+
+## 16:9 game presentation
+
+The entire desktop and landscape-tablet game player (`#gameShell`) now uses a 16:9 frame, with a 16:9 canvas on the left, scrollable activity/camera panel on the right, and action toolbar below. Alya's **existing character art is unchanged** and her brief dialogue sits inside the game at the top left. Press `Lihat lagi` to expand the complete dialogue and replay audio with `Dengar Semula`; press `Ringkaskan` to return to the compact bubble.
+
+For smartphones and narrow screens, the **playable canvas remains 16:9**, but mission activities and camera stack below instead of shrinking long instructions into an illegible height. Rotate a phone or tablet to landscape for the roomiest play experience. The camera preview remains 4:3 and appears only in Misi 3 when selected. The complete integrated offline-friendly HTML is `Misi-Pertanian-Bandar.html`; the MediaPipe hand-tracking model still requires a secure site and network access.
+
+**Validation:** JavaScript static parse and bundling checks passed. Real-browser 16:9 UI and mobile touch regression as well as camera and device voice compatibility are pending actual hardware verification.
 
 ## Run locally
 
