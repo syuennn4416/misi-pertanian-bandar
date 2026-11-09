@@ -191,3 +191,16 @@ header{max-width:1400px}
 /* Friendly guide in otherwise empty 16:9 mission sidebar. */
 #gameTasks #activity:empty{display:block}
 #gameTasks #activity:empty::before{content:'Teroka lokasi dan komponen pada peta. Dengar arahan Alya atau pilih butang misi di bahagian bawah.';display:block;padding:14px 12px;border:2px dashed #b8d5b0;border-radius:9px;color:#f8efd1;line-height:1.6;font-size:clamp(13px,1.1vw,16px);background:#183e38}
+
+
+/* Phase 4: self-selected Alya TTS language, installed voice and speed controls. */
+#voiceSettings{display:grid;grid-template-columns:1fr;gap:10px;border:2px solid #8aa88b;background:#f7f1d9;color:#2d4b38;border-radius:12px;padding:14px;margin:10px 0 16px;min-width:0}
+#voiceSettings legend{font-weight:800;padding:0 8px;font-size:clamp(16px,2vw,20px)}
+#voiceSettings label{display:flex;flex-direction:column;gap:5px;margin:0;min-width:0}
+#voiceSettings select{width:100%;max-width:100%;min-height:44px;text-overflow:ellipsis;font-size:clamp(14px,2.5vw,17px);background:#fff9ec}
+#voiceSettings #voiceRate{width:100%;cursor:pointer;accent-color:#477d63}
+#voiceSettings #voiceRateLabel{font-weight:800;font-size:15px}
+#voiceSettings #testVoice{justify-self:start;min-height:44px;background:#d2efca}
+#voicePreviewStatus{font-size:14px;line-height:1.5;color:#275944;min-height:24px;font-weight:700;overflow-wrap:anywhere;margin:3px 0}
+#voiceSettings .voiceHint{font-size:13px;color:#53634c;line-height:1.5;margin:0}
+@media(max-width:600px){#voiceSettings{padding:10px}#voiceSettings select{font-size:14px}#voiceSettings legend{font-size:15px}}
