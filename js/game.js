@@ -19,7 +19,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' ')sound.ac
 const art=renderer($('#world')),portrait=renderer($('#portrait'));
 const phase3=createPhase3({$,btn,spot,say,save,go,modal,esc,toast,award,answerForm,state:()=>state,time:()=>simTime,missionMenu,book,effect:kind=>sound.effect(kind)});
 function save(){profiles[state.mode]=state;try{localStorage.setItem('misi-bandar-v2',JSON.stringify({mode:state.mode,profiles}))}catch{storageOK=false;toast('Simpanan tidak tersedia. Eksport rekod sebelum keluar.')}}
-function newGame(){const begin=()=>{const m=state.mode,previous=state;state=freshProgress(m);Object.assign(state,{vol:{...previous.vol},muted:previous.muted,autoVoice:previous.autoVoice,musicEnabled:previous.musicEnabled,voiceLanguage:previous.voiceLanguage||'id-ID',voiceId:previous.voiceId||'auto',voiceRate:previous.voiceRate||1.1});state.started=true;profiles[m]=state;review=false;save();$('#modal').close();music();go('map')};if(state.started||state.answers.length||state.badges.length){modal('<h2>Mulakan permainan baharu?</h2><p>Hanya kemajuan mod ini akan dipadam. Eksport rekod melalui Buku Misi jika perlu. Mod lain tidak berubah.</p><button id="confirmNew">Ya, mula baharu</button><button id="cancelNew">Batal</button>');$('#confirmNew').onclick=begin;$('#cancelNew').onclick=()=>$('#modal').close()}else begin()}
+function newGame(){const begin=()=>{const m=state.mode,previous=state;state=freshProgress(m);Object.assign(state,{vol:{...previous.vol},muted:previous.muted,autoVoice:previous.autoVoice,musicEnabled:previous.musicEnabled,voiceLanguage:previous.voiceLanguage||'id-ID',voiceId:previous.voiceId||'auto',voiceRate:previous.voiceRate||1.1,voicePitch:previous.voicePitch||1});state.started=true;profiles[m]=state;review=false;save();$('#modal').close();music();go('map')};if(state.started||state.answers.length||state.badges.length){modal('<h2>Mulakan permainan baharu?</h2><p>Hanya kemajuan mod ini akan dipadam. Eksport rekod melalui Buku Misi jika perlu. Mod lain tidak berubah.</p><button id="confirmNew">Ya, mula baharu</button><button id="cancelNew">Batal</button>');$('#confirmNew').onclick=begin;$('#cancelNew').onclick=()=>$('#modal').close()}else begin()}
 function toast(s){$('#toast').textContent=s;$('#toast').style.display='block';clearTimeout(toast.timer);toast.timer=setTimeout(()=>$('#toast').style.display='none',3500)}
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function btn(text,fn,parent='#controls',cls=''){const b=document.createElement('button');b.textContent=text;b.className=cls;b.onclick=fn;$(parent).append(b);return b}
@@ -147,7 +147,7 @@ function settings(){
  <label>Bahasa suara / Aksen <select id="voiceLanguage">${sound.availableLanguages().map(lang=>`<option value="${esc(lang)}">${esc(labels[lang]||lang)}</option>`).join('')}</select></label>
  <label>Suara tersedia pada peranti <select id="voiceId"></select></label>
  <label>Kelajuan suara <input id="voiceRate" type="range" min="0.7" max="1.4" step="0.05" value="${state.voiceRate||1.1}"><output id="voiceRateLabel">${Number(state.voiceRate||1.1).toFixed(2)}×</output></label>
- <button type="button" id="testVoice">Uji Suara Alya</button>
+ <button type="button" id="testVoice">Uji Suara Alya</button><button type="button" id="refreshVoices">Muat Semula Senarai Suara</button><label>Nada suara <input id="voicePitch" type="range" min="0.8" max="1.3" step="0.05" value="${state.voicePitch||1}"><output id="voicePitchLabel">${Number(state.voicePitch||1).toFixed(2)}×</output></label>
  <p id="voicePreviewStatus" role="status">Sedang menyemak senarai suara peranti…</p>
  <p class="voiceHint">Pilihan bahasa mengubah suara pembaca, bukan teks pembelajaran. Semua nota dan arahan permainan kekal dalam Bahasa Melayu Malaysia. Suara Google hanya muncul jika disediakan oleh pelayar anda.</p></fieldset>
  <label><input id="mute" type="checkbox" ${state.muted?'checked':''}> Bisukan semua audio</label>
@@ -167,6 +167,8 @@ function settings(){
  langSelect.onchange=()=>{state.voiceLanguage=langSelect.value;state.voiceId='auto';stopVoice();save();refreshVoiceOptions()};
  $('#voiceId').onchange=e=>{state.voiceId=e.target.value;stopVoice();save()};
  $('#voiceRate').oninput=e=>{state.voiceRate=Number(e.target.value);$('#voiceRateLabel').textContent=state.voiceRate.toFixed(2)+'×';save()};
+ $('#refreshVoices').onclick=()=>{window.speechSynthesis?.getVoices?.();refreshVoiceOptions()};
+ $('#voicePitch').oninput=e=>{state.voicePitch=Number(e.target.value);$('#voicePitchLabel').textContent=state.voicePitch.toFixed(2)+'×';save()};
  $('#testVoice').onclick=()=>sound.speak('Hai, saya Alya! Selamat datang ke Misi Pertanian Bandar. Mari kita belajar bersama-sama.','',true);
  $('#mode').value=state.mode;
  $('#mode').onchange=e=>{save();state=profiles[e.target.value];review=false;stopVoice();sound.sync();save();$('#modal').close();go('home')};
@@ -175,7 +177,7 @@ function settings(){
  $('#musicEnabled').onchange=e=>{state.musicEnabled=e.target.checked;sound.sync();save()};
  document.querySelectorAll('[data-vol]').forEach(el=>el.oninput=()=>{state.vol[el.dataset.vol]=Number(el.value);sound.sync();save()});
 }
-window.speechSynthesis?.addEventListener?.('voiceschanged',()=>{if($('#voiceLanguage'))refreshVoiceOptions()});
+window.speechSynthesis?.addEventListener?.('voiceschanged',()=>{if($('#voiceLanguage'))refreshVoiceOptions();sound.tryPendingVoices()});
 $('#dialogToggle').onclick=()=>{const b=$('#dialogToggle'),panel=$('#dialogueTranscript'),open=panel.hidden;panel.hidden=!open;b.setAttribute('aria-expanded',String(open));b.textContent=open?'Tutup dialog':'Lihat lagi';b.title=open?'Tutup dialog penuh':'Baca dialog penuh Alya di ruang aktiviti';if(open)panel.scrollIntoView({block:'nearest',behavior:'smooth'})};
 $('#transcriptClose').onclick=collapseDialogue;
 $('#transcriptListen').onclick=speak;
