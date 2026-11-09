@@ -18,6 +18,16 @@ document.addEventListener('click',event=>{if(event.isTrusted&&event.target?.clos
 document.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' ')sound.activate()});
 const art=renderer($('#world')),portrait=renderer($('#portrait'));
 const phase3=createPhase3({$,btn,spot,say,save,go,modal,esc,toast,award,answerForm,state:()=>state,time:()=>simTime,missionMenu,book,effect:kind=>sound.effect(kind)});
+function releaseCameraForPrivacy(){
+ if(!hands)return;
+ hands.stop();hands=null;assemblyUI?.hide();
+ const video=$('#camera'),panel=$('#cameraPanel');
+ video.hidden=true;$('#cameraPlaceholder').hidden=false;
+ $('#cameraIndicator').textContent='Kamera dimatikan';
+ if(panel&&!panel.hidden)$('#cameraStatus').textContent='Kamera dihentikan apabila halaman tidak aktif. Tekan Cuba Semula Kamera untuk mengaktifkan lagi.';
+}
+document.addEventListener('visibilitychange',()=>{if(document.hidden)releaseCameraForPrivacy()});
+window.addEventListener('pagehide',releaseCameraForPrivacy);
 function save(){profiles[state.mode]=state;try{localStorage.setItem('misi-bandar-v2',JSON.stringify({mode:state.mode,profiles}))}catch{storageOK=false;toast('Simpanan tidak tersedia. Eksport rekod sebelum keluar.')}}
 function newGame(){const begin=()=>{const m=state.mode,previous=state;state=freshProgress(m);Object.assign(state,{vol:{...previous.vol},muted:previous.muted,autoVoice:previous.autoVoice,musicEnabled:previous.musicEnabled,voiceLanguage:previous.voiceLanguage||'id-ID',voiceId:previous.voiceId||'auto',voiceRate:previous.voiceRate||1.1,voicePitch:previous.voicePitch||1});state.started=true;profiles[m]=state;review=false;save();$('#modal').close();music();go('map')};if(state.started||state.answers.length||state.badges.length){modal('<h2>Mulakan permainan baharu?</h2><p>Hanya kemajuan mod ini akan dipadam. Eksport rekod melalui Buku Misi jika perlu. Mod lain tidak berubah.</p><button id="confirmNew">Ya, mula baharu</button><button id="cancelNew">Batal</button>');$('#confirmNew').onclick=begin;$('#cancelNew').onclick=()=>$('#modal').close()}else begin()}
 function toast(s){$('#toast').textContent=s;$('#toast').style.display='block';clearTimeout(toast.timer);toast.timer=setTimeout(()=>$('#toast').style.display='none',3500)}
@@ -27,7 +37,7 @@ function spot(text,x,y,fn){const b=btn(text,fn,'#spots','spot');b.style.left=x+'
 function modal(html){$('#modalBody').innerHTML=html;if(!$('#modal').open)$('#modal').showModal()}
 function stopVoice(){sound.stopVoice()}
 function say(text,id=''){speech=text;speechID=id;$('#speech').textContent=text;$('#transcriptText').textContent=text;sound.present(text,id)}
-function collapseDialogue(){const b=$('#dialogToggle');$('#dialogue').classList.remove('expanded');$('#dialogueTranscript').hidden=true;b.setAttribute('aria-expanded','false');b.textContent='Lihat lagi';b.title='Baca dialog penuh Alya di ruang aktiviti'}
+function collapseDialogue(){const b=$('#dialogToggle');$('#dialogue').classList.remove('expanded');$('#transcriptPause').textContent='Jeda Suara';$('#dialogueTranscript').hidden=true;b.setAttribute('aria-expanded','false');b.textContent='Lihat lagi';b.title='Baca dialog penuh Alya di ruang aktiviti'}
 function speak(){sound.speak(speech,speechID,true)}
 function music(){sound.activate()}
 function unlock(id){if(!state.notes.includes(id))state.notes.push(id);save()}
