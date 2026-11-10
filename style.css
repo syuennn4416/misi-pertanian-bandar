@@ -360,3 +360,53 @@ header{max-width:1400px}
 #checkCameraPermission,#backToSettings{min-height:44px;margin:7px 6px 7px 0}
 @media(max-width:780px){#gameTasks .dialogue-transcript{padding:13px}#gameTasks #transcriptText{font-size:15px}#gameTasks .transcript-actions button{min-height:44px}}
 @media print{#dialogueTranscript,.device-results,#deviceCheck{display:none!important}}
+
+
+/* Phase 4 A/D/E: cohesive pixel station panels and usable device / teacher workflow. */
+.lesson-checklist{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:12px 0 20px}
+.lesson-checklist article{background:#f9f5de;border:2px solid #a9c39a;border-radius:10px;padding:11px;display:grid;grid-template-columns:26px 1fr;gap:4px 7px;min-width:0}
+.lesson-checklist article span{font-size:22px;color:#3d8266;line-height:1.2}
+.lesson-checklist article strong{font-size:14px;line-height:1.4;color:#285847}
+.lesson-checklist article small{grid-column:2;color:#496d59;margin:0;font-size:12px;line-height:1.4}
+.lesson-timeline{display:grid;gap:8px;margin:12px 0}
+.lesson-timeline article{padding:12px 14px;border-left:5px solid #72a887;background:#f5f4e4;border-radius:8px}
+.lesson-timeline article strong{font-size:14px;color:#2a634f}
+.lesson-timeline article p{margin:5px 0 0;font-size:13px;line-height:1.45}
+.book-glossary{margin:18px 0;background:#f1f4e6;border:2px solid #b3cba9;border-radius:12px;padding:12px}
+.book-glossary summary{font-weight:800;font-size:15px;cursor:pointer;padding:6px;outline-offset:4px}
+.book-glossary summary:focus-visible{outline:3px solid #e1b464}
+.book-glossary .knowledge-grid{margin-top:12px}
+#modalBody .mission-book{max-width:900px}
+#modalBody .book-tabs button:focus-visible,#modalBody .book-actions button:focus-visible{outline:3px solid #b68a33;outline-offset:2px}
+#gameShell{isolation:isolate}
+#gameTasks .response-panel,#gameTasks .science-guide,#gameTasks .mission-brief{max-width:100%}
+#gameTasks #activity .science-guide button{min-height:44px}
+#gameActions #controls button,#gameTasks button{touch-action:manipulation}
+#stage .spot{outline-offset:2px}
+#stage .spot:focus-visible{outline:3px solid #fbe37e}
+@media(min-width:781px) and (max-height:630px){
+ #gameShell{margin-bottom:8px}
+ #gameTasks{padding:7px}
+ #gameTasks #objective.mission-brief{padding:7px 9px;font-size:12px}
+ #gameTasks #activity button{min-height:35px}
+ #gameActions{padding:6px 8px}
+ #gameActions #controls button{min-height:36px}
+}
+@media(max-width:780px){
+ #gameTasks{scroll-margin-top:12px}
+ #gameActions #controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+ #gameActions #controls button{width:100%;min-height:44px}
+ #gameTasks #activity .science-guide{width:100%}
+ .lesson-checklist{grid-template-columns:1fr}
+}
+@media(max-width:390px){
+ #gameActions #controls{grid-template-columns:1fr}
+ #dialogue:not(.expanded){max-height:23%}
+ #gameTasks .mission-brief{font-size:13px}
+}
+@media print{
+ .lesson-checklist,.lesson-timeline{display:block}
+ .lesson-timeline article,.lesson-checklist article{break-inside:avoid;page-break-inside:avoid}
+ .book-glossary{break-inside:avoid}
+ #printContent{font-family:Arial,sans-serif!important;font-size:11pt!important;line-height:1.45!important}
+}
