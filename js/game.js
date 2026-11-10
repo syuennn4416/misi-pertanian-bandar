@@ -8,8 +8,8 @@ import {mountAssembly} from './assembly.js';
 import {HandControl} from './hands.js';
 import {AudioDirector} from './audio.js';
 const $=s=>document.querySelector(s);
-let profiles={kendiri:freshProgress(),kelas:freshProgress('kelas')},mode='kendiri',storageOK=true;
-try{({profiles,mode}=loadProfiles(localStorage))}catch{storageOK=false}
+let profiles={kendiri:freshProgress(),kelas:freshProgress('kelas')},mode='kendiri',storageOK=true,storageWarning='';
+try{const loaded=loadProfiles(localStorage);({profiles,mode}=loaded);storageWarning=loaded.warning||''}catch{storageOK=false;storageWarning='Simpanan tidak dapat dibaca. Eksport rekod jika perlu.'}
 let state=profiles[mode],hands=null,assemblyUI=null,flowCompleted=false;
 let scene='home',paused=false,simTime=0,last=0,speech='',speechID='',talking=false,review=false;
 const sound=new AudioDirector(()=>state,playing=>{talking=playing;$('#dialogue').classList.toggle('speaking',playing)},message=>{$('#voiceStatus').textContent=message;$('#transcriptStatus').textContent=message;if($('#voicePreviewStatus'))$('#voicePreviewStatus').textContent=message});
@@ -250,7 +250,7 @@ function frame(t){const delta=Math.min((t-last)/1000,.1);last=t;if(!paused)simTi
     g.querySelectorAll('[data-guide-dot]').forEach((el,i)=>el.classList.toggle('active',i===ix));
    }
   }
- if(scene==='flow'&&simTime>=6&&!flowCompleted){flowCompleted=true;state.simulationSeen=true;save();$('#explainLab').disabled=false;}if($('#stampAlya')){const stampArt=renderer($('#stampAlya'));stampArt.clear();stampArt.alya(40,50,t/1000,2.7,'stamp');}portrait.clear();portrait.alya(40,50,t/1000,2.7,talking?'talk':Math.floor(t/3000)%2?'wave':'idle');requestAnimationFrame(frame)}go('home');requestAnimationFrame(frame);
+ if(scene==='flow'&&simTime>=6&&!flowCompleted){flowCompleted=true;state.simulationSeen=true;save();$('#explainLab').disabled=false;}if($('#stampAlya')){const stampArt=renderer($('#stampAlya'));stampArt.clear();stampArt.alya(40,50,t/1000,2.7,'stamp');}portrait.clear();portrait.alya(40,50,t/1000,2.7,talking?'talk':Math.floor(t/3000)%2?'wave':'idle');requestAnimationFrame(frame)}go('home');requestAnimationFrame(frame);if(storageWarning)setTimeout(()=>toast(storageWarning),400);
 function workshop(){
  say('Makmal Tani Pintar: pasang tiga komponen pada bekas. A ialah penanda aras air, B ialah saluran mengisi air, C menghubungkan ruang air dengan medium. Seret komponen atau pilih komponen kemudian sentuh ruang.','workshop');
  $('#objective').textContent='Misi 3 · Pasang tiga komponen';
