@@ -127,7 +127,11 @@ function book(){
  $('#viewReport').onclick=phase3.report;$('#viewWorksheet').onclick=phase3.worksheet;
  $('#exportPBD').onclick=()=>{
   if(state.mode==='kelas'){toast('Mod Kelas bukan rekod individu. Sila gunakan lembaran jawapan murid.');return}
-  const quote=value=>'"'+String(value??'').replaceAll('"','""').replace(/[\\r\\n]+/g,' ').replace(/^[=+@\\-]/,'\u2019$('#viewReport').onclick=phase3.report;$('#viewWorksheet').onclick=phase3.worksheet;')+'"';
+  const quote=value=>{
+   let valueText=String(value??'').replace(/[\r\n]+/g,' ');
+   if(/^[=+@-]/.test(valueText))valueText="'"+valueText;
+   return '"'+valueText.replaceAll('"','""')+'"';
+  };
   const row=[state.pbd.studentName||'',state.pbd.assessedAt?new Date(state.pbd.assessedAt).toISOString():'',state.pbd.scores['7.1.1']??'',state.pbd.scores['7.1.2']??'',...state.pbd.checks,state.pbd.comment];
   const header=['Nama Murid','Tarikh Penilaian','Skor 7.1.1 (1-3)','Skor 7.1.2 (1-3)',...pbdChecklist.map((_,i)=>'Semakan '+(i+1)),'Catatan Guru'];
   downloadCsv([header,row],'ringkasan-pbd-misi-pertanian.csv',quote);
