@@ -22,4 +22,33 @@ export function normalizeProgress(raw,mode='kendiri'){
  }
  return base;
 }
-export function loadProfiles(storage){let profiles={kendiri:freshProgress(),kelas:freshProgress('kelas')},mode='kendiri';const raw=JSON.parse(storage.getItem('misi-bandar-v2')||'null');if(raw){mode=raw.mode==='kelas'?'kelas':'kendiri';for(const m of ['kendiri','kelas'])profiles[m]=normalizeProgress(raw.profiles?.[m],m)}else{const old=JSON.parse(storage.getItem('misi-bandar-v1')||'null');if(old){mode=old.mode==='kelas'?'kelas':'kendiri';profiles[mode]=normalizeProgress(old,mode)}}return {profiles,mode};}
+export function loadProfiles(storage){
+ let profiles={kendiri:freshProgress(),kelas:freshProgress('kelas')},mode='kendiri',warning='';
+ const read=key=>{
+  let encoded;
+  try{encoded=storage.getItem(key)}catch{warning='Simpanan pelayar tidak tersedia. Eksport rekod selepas bermain.';return null}
+  if(!encoded)return null;
+  try{
+   const value=JSON.parse(encoded);
+   if(!value||typeof value!=='object'||Array.isArray(value))throw Error('Rekod bukan objek');
+   return value;
+  }catch{
+   // Never silently delete malformed save data. Keep original bytes in a recovery key.
+   try{
+    const recoveryKey=key+'-recovery';
+    if(!storage.getItem(recoveryKey))storage.setItem(recoveryKey,encoded);
+   }catch{}
+   warning='Rekod lama tidak dapat dibaca. Salinan pemulihan disimpan jika ruang pelayar mencukupi. Gunakan Import Sandaran sebelum memulakan semula.';
+   return null;
+  }
+ };
+ const current=read('misi-bandar-v2');
+ if(current&&current.profiles&&typeof current.profiles==='object'){
+  mode=current.mode==='kelas'?'kelas':'kendiri';
+  for(const m of ['kendiri','kelas'])profiles[m]=normalizeProgress(current.profiles[m],m);
+ }else{
+  const old=read('misi-bandar-v1');
+  if(old){mode=old.mode==='kelas'?'kelas':'kendiri';profiles[mode]=normalizeProgress(old,mode)}
+ }
+ return {profiles,mode,warning};
+}
