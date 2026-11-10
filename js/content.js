@@ -29,3 +29,25 @@ export const pbdRubric=[
   'Menjelaskan dua sistem, komponen berkaitan dan aliran air/nutrien dengan tepat dan jelas.'
  ]}
 ];
+
+
+/* Quick reference: vocabulary is supplementary; the target SPs remain 7.1.1 & 7.1.2. */
+export const vocabulary=[
+ ['Pertanian bandar','Aktiviti bercucuk tanam di kawasan bandar menggunakan ruang yang ada, termasuk ruang terhad di kediaman dan kebun komuniti.'],
+ ['Takungan','Bekas atau ruang untuk menyimpan air atau larutan nutrien bagi sistem penanaman.'],
+ ['Larutan nutrien','Air yang mengandungi nutrien diperlukan oleh tanaman untuk pertumbuhan.'],
+ ['Kitaran semula','Larutan nutrien dialirkan melalui sistem dan dikembalikan ke tangki untuk digunakan semula.'],
+ ['Akuaponik','Sistem yang menggabungkan ternakan ikan dengan tanaman. Mikroorganisma bermanfaat membantu memproses bahan buangan ikan menjadi nutrien untuk tumbuhan.'],
+ ['Partikel kapilari','Bahan yang membantu pergerakan air dari takung ke medium tanaman. Contoh dalam DSKP ialah bebola air atau tempurung kelapa sawit.'],
+ ['Medium penanaman','Bahan yang menyokong akar dan pertumbuhan tanaman, contohnya peatmoss, vermiculite atau perlite.'],
+ ['Pam','Komponen yang mengalirkan air atau larutan nutrien dalam sistem tertentu; bekas pengairan kendiri tidak memerlukan pam.']
+];
+export const lessonTimeline=[
+ ['Set Induksi',5,'Perkenalkan isu ruang terhad dan objektif pelajaran.'],
+ ['Misi 1',8,'Perhatikan contoh dan terangkan maksud pertanian bandar (SP 7.1.1).'],
+ ['Misi 2',14,'Kenal pasti jenis, komponen dan aliran empat sistem takungan.'],
+ ['Misi 3',10,'Teroka komponen dan tindakan kapilari melalui simulasi.'],
+ ['Misi 4',8,'Jelaskan punca kegagalan pam atau partikel kapilari.'],
+ ['Misi 5',10,'Terangkan maksud, bandingkan dua sistem dan beri alasan.'],
+ ['Penutup',5,'Rumuskan pembelajaran; guru mengumpul bukti dan membuat penilaian PBD.']
+];
