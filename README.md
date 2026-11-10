@@ -129,3 +129,16 @@ Buku Misi contains all five award stamps, repair notes, all response versions, a
 
 ### Testing limits
 GitHub Actions builds a complete single-file HTML and runs browser regression tests. Simulated desktop/tablet/phone layouts and PBD, backup, voice and game progression can be tested automatically. **Actual iOS/Android hardware camera pinch accuracy and speech voice quality still require physical device acceptance**; simulation cannot certify those conditions. This is a Draft PR, not a production Pages rollout.
+
+
+## Latest refinements — A, B, D, E, F, G, H
+
+- Added minor city vegetation pixel details **without touching Alya's character code**.
+- Misi 3: better invalid-drop reset, concise touch feedback and active-hand continuity with MediaPipe configured for up to two detected hands. Only one hand controls the pointer at once; test physical pinch accuracy before publishing.
+- Improved responsive control-grid layout on phones and short landscape screens while preserving the 16:9 game viewport.
+- `Buku Misi → Panduan PdP`: a 60-minute class timeline and syllabus glossary. `Eksport PBD CSV` exports an existing manually assessed pupil record; it never awards TP automatically.
+- Bad JSON saves are preserved under a recovery key when possible, with an explicit warning and the existing backup-import feature.
+- Science content checked against the [KSSR RBT Tahun 5 DSKP](https://fliphtml5.com/wifkl/jtrm/DSKP_KSSR_RBT_TAHUN_5_%28SEMAKAN%29/37/) and [Buku Teks RBT Tahun 5, page 69](https://fliphtml5.com/hkvtu/otho/SK_Reka_Bentuk_dan_Teknologi_Tahun_5_KSSR/79/). SP 7.1.1 and 7.1.2 remain the sole targeted SPs.
+- `QA_CHECKLIST_PHASE4.md` lists manual iPhone/iPad/Android, projector, HTTPS webcam and 60-minute lesson acceptance tasks. `tests/phase4_final_polish.test.cjs` adds browser regression for lesson/glossary, CSV, wrong drag and recovery.
+
+**Category C voice/Dialogue and all original Alya art were intentionally left unchanged.** This is still a Draft development branch, not a merged production GitHub Pages release.
