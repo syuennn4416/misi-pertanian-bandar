@@ -5,8 +5,413 @@
 #objective{bottom:auto;top:10px;left:auto;right:12px;max-width:94%;pointer-events:none}
 #activity{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;color:#fff0cc}#activity:empty{display:none}#activity button{min-height:44px}#assemblyBoard{position:absolute;inset:0;touch-action:none}#assemblyBoard .parts-tray{position:absolute;left:2%;top:12%;display:flex;gap:8px;flex-wrap:wrap;max-width:96%}.parts-tray button{font-size:14px;touch-action:none}.parts-tray button.selected{outline:4px solid #ffeb69}.targets{position:absolute;inset:0;pointer-events:none}.targets button{position:absolute;transform:translate(-50%,-50%);width:64px;height:54px;opacity:.85;pointer-events:auto;background:#fff0b8;border:3px dashed #3b6f79}.hand-cursor{position:absolute;width:22px;height:22px;border:4px solid #f34d89;border-radius:50%;transform:translate(-50%,-50%);pointer-events:none;z-index:5;background:#ffffff80}#camera{width:160px;height:120px;object-fit:cover;transform:scaleX(-1)}#cameraControls{display:flex;gap:8px;flex-wrap:wrap}#assemblyFeedback,#cameraStatus{width:100%;margin:4px 0}#stampAlya{width:80px;height:96px;animation:stamp 1s both}.compare select,dialog select{max-width:100%}@media(max-width:600px){.parts-tray button{font-size:10px;padding:5px;min-height:36px}#assemblyBoard .parts-tray{gap:3px;top:17%}.targets button{width:44px;height:40px;font-size:12px;padding:3px}#activity{font-size:15px}#activity button{font-size:14px}}
 @media(max-width:600px){#assemblyBoard .parts-tray{top:24%}}
-</style><body><header><button id="home">⌂ <span>Bandar Hijau</span></button><span id="status">RBT • Tahun 5</span><button id="book">Buku Misi</button><button id="settings">Tetapan</button></header><main><section id="stage"><canvas id="world" width="640" height="360" aria-label="Bandar piksel interaktif"></canvas><div id="spots"></div><div id="title"></div><div id="objective"></div></section><section id="dialogue"><canvas id="portrait" width="80" height="96"></canvas><div class="dialogue-box"><strong class="nameplate">ALYA <small>Rakan penerokaan kamu</small></strong><p id="speech"></p><button id="listen">Dengar Semula</button><span id="voiceStatus"></span></div></section><section id="activity"></section><section id="controls"></section></main><dialog id="modal"><button id="close">Tutup ×</button><div id="modalBody"></div></dialog><div id="toast" role="status"></div><script>
-const definition='Pertanian bandar ialah aktiviti bercucuk tanam untuk menghasilkan tanaman makanan di sekitar rumah yang mempunyai ruang terhad. Penanaman boleh dijalankan secara konvensional atau menggunakan teknologi moden.';
+.action-row{display:flex;flex-wrap:wrap;gap:8px;width:100%}.response-panel{width:100%;background:#fff3d5;color:#3f4837;border:3px solid #775335;border-radius:8px;padding:18px;line-height:1.6}.response-panel label{display:block}.response-panel input:not([type=checkbox]),.response-panel select{width:100%;font:inherit;padding:9px;border:2px solid #83966a;border-radius:6px}.response-panel textarea{display:block}.final-diagrams{display:grid;grid-template-columns:1fr 1fr;width:100%;gap:12px}.final-diagrams figure{margin:0;background:#fff3d5;color:#3f4837;padding:10px;border-radius:8px}.final-diagrams canvas{width:100%;height:auto}.final-diagrams figcaption{min-height:50px;font-size:16px}#finalError{color:#a23c2c}#repairStage{width:100%;font-weight:bold}.final-stamp{color:#b33432}#printContent dd{white-space:pre-wrap;margin:6px 0 20px}#printContent dt{font-weight:bold}#printContent p{white-space:pre-wrap}#printContent small{display:block;color:#475642}@media(max-width:600px){.final-diagrams{grid-template-columns:1fr}.response-panel{padding:12px}.response-panel select{font-size:14px}}@media print{body>*:not(dialog){display:none!important}dialog{position:static!important;display:block!important;border:0!important;width:100%!important;max-width:none!important;max-height:none!important;overflow:visible!important;box-shadow:none!important;color:#000!important;background:#fff!important}dialog button,#close{display:none!important}dialog::backdrop{display:none!important}#printContent{display:block!important}#printContent article{break-inside:avoid}#printContent small{display:block!important}}
+
+/* Phase 4: component hotspots are part of the interactive diagram, not decorations. */
+.part-hotspot{min-width:28px;width:30px;height:30px;padding:1px;border-radius:50%;font-size:14px;font-weight:900;background:#fff2a8;border-color:#385e55;box-shadow:0 2px #64513e;z-index:3}
+.part-hotspot:hover,.part-hotspot:focus-visible{background:#fffbd7;outline:2px solid #f5c359}
+@media(max-width:600px){.part-hotspot{min-width:24px;width:26px;height:26px;font-size:12px}}
+
+/* Phase 4 camera and responsive layout. Keep Alya and core Canvas artwork unchanged. */
+main{max-width:1360px;width:100%;padding:0 clamp(8px,2vw,20px) 30px}
+header{max-width:1400px}
+#playWorkspace{display:grid;grid-template-columns:minmax(0,1fr);gap:16px;align-items:start}
+#playWorkspace.camera-active{grid-template-columns:minmax(0,1fr) minmax(255px,330px)}
+#stage{width:100%;min-width:0;aspect-ratio:16/9}
+#cameraPanel{min-width:0;border:3px solid #d8b681;background:#f4e2b7;color:#473a2d;border-radius:9px;padding:12px;box-shadow:0 5px 0 #78523c}
+#cameraPanel[hidden],#camera[hidden],#cameraPlaceholder[hidden]{display:none!important}
+.camera-header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.camera-header strong{font-size:clamp(17px,1.5vw,21px)}
+#cameraIndicator{border-radius:4px;padding:4px 7px;background:#edc989;color:#493421;font-size:12px}
+#cameraViewport{position:relative;aspect-ratio:4/3;width:100%;max-width:460px;margin:auto;background:#183b36;border:3px solid #826448;border-radius:6px;overflow:hidden}
+#camera{display:block;width:100%;height:100%;object-fit:cover;transform:scaleX(-1);box-shadow:none}
+#cameraPlaceholder{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;height:100%;padding:14px;text-align:center;color:#f8f0d3}
+#cameraPlaceholder span{font-size:32px}
+#cameraPlaceholder p{font-size:14px;line-height:1.4;margin:0}
+#cameraStatus{font-size:14px;line-height:1.5;min-height:42px;margin:10px 0;overflow-wrap:anywhere}
+#cameraControls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+#cameraControls button{min-width:0;min-height:44px;padding:9px 6px;font-size:clamp(12px,1vw,14px);overflow-wrap:anywhere}
+.cameraPrivacy{font-size:12px;color:#574834;margin:10px 0 0;line-height:1.4}
+#controls{margin-left:0;gap:10px}
+#controls button,#activity button{min-height:44px}
+#dialogue{max-width:1100px;margin-left:auto;margin-right:auto}
+#activity{max-width:1250px;margin-left:auto;margin-right:auto}
+#playWorkspace.camera-active+#dialogue{margin-top:18px}
+@media(max-width:1000px){
+ #playWorkspace.camera-active{grid-template-columns:minmax(0,1fr)}
+ #cameraPanel{width:100%;max-width:520px;margin:0 auto}
+ #cameraViewport{max-width:380px}
+ #cameraControls button{font-size:14px}
+}
+@media(max-width:600px){
+ main{padding:0 8px 20px}
+ #playWorkspace{gap:11px}
+ #cameraPanel{padding:10px}
+ #cameraViewport{max-width:300px}
+ .camera-header strong{font-size:17px}
+ #controls{margin-left:0}
+ #controls button,#activity button{min-height:44px;max-width:100%}
+ #cameraStatus{font-size:13px}
+ #objective{font-size:clamp(11px,2.8vw,14px)}
+ .spot{font-size:clamp(10px,2.7vw,13px)}
+}
+@media(min-width:601px) and (max-width:850px){
+ #dialogue{grid-template-columns:115px minmax(0,1fr);min-height:165px}
+ #portrait{width:115px;height:138px}
+}
+
+/* Phase 4 Category C: readable live captions and stronger badge/stamp celebration. */
+#speech{white-space:pre-wrap;overflow-wrap:anywhere}
+#dialogue.speaking .dialogue-box{box-shadow:0 0 0 3px #29323c,inset 0 0 0 3px #397096,0 0 0 5px #f0c46c55}
+#dialogue.speaking .nameplate::after{content:' ◖)))';color:#397052;font-size:13px;vertical-align:middle}
+#voiceStatus{display:inline-block;max-width:100%;overflow-wrap:anywhere}
+.celebrate .badge{filter:drop-shadow(0 4px 2px #af732a60);animation:badge-reveal .8s cubic-bezier(.15,1.55,.37,1) both}
+.celebrate .final-stamp{display:inline-block;max-width:90%;padding:6px 22px;border:6px double #b3312f;border-radius:5px;color:#b3312f;background:#fff4e0;font-size:clamp(24px,5vw,42px);letter-spacing:.08em;box-shadow:3px 4px #74352c20;transform-origin:center;animation:stamp-hit .38s .95s cubic-bezier(.1,.8,.4,1.25) both}
+@keyframes badge-reveal{0%{transform:scale(.2) rotate(-18deg);opacity:0}75%{transform:scale(1.13) rotate(6deg);opacity:1}100%{transform:scale(1) rotate(0)}}
+@keyframes stamp-hit{0%{transform:scale(2.1) rotate(-16deg);opacity:0;filter:blur(3px)}65%{transform:scale(.89) rotate(-8deg);opacity:1;filter:blur(0)}100%{transform:scale(1) rotate(-7deg);opacity:1}}
+@media(prefers-reduced-motion:reduce){.celebrate .badge,.celebrate .final-stamp{animation:none!important}}
+@media(max-width:600px){#dialogue.speaking .nameplate::after{font-size:11px}.celebrate .final-stamp{padding:5px 12px}}
+
+
+/* Phase 4 layout refinement: whole desktop player is 16:9. The 640×360 canvas itself keeps 16:9.
+   A small expandable dialogue stays at upper-left; controls and camera are outside the active canvas. */
+#gameShell{position:relative;display:grid;grid-template-columns:minmax(0,73%) minmax(0,27%);grid-template-rows:minmax(0,1fr) minmax(90px,25%);aspect-ratio:16/9;width:100%;max-width:1400px;margin:0 auto 16px;border:6px solid #3c624d;border-radius:16px;background:#163d32;overflow:hidden;box-shadow:0 10px 0 #9cb58f,0 14px 25px #193d2940;min-height:0}
+#playWorkspace,#playWorkspace.camera-active{display:block;grid-column:1;grid-row:1;min-width:0;min-height:0;padding:10px 8px 2px;overflow:hidden}
+#stage{aspect-ratio:16/9;width:100%;height:auto;min-width:0;margin:0;border-width:3px;box-shadow:none}
+#world{width:100%;height:100%;image-rendering:pixelated}
+#gameTasks{grid-column:2;grid-row:1/3;overflow:auto;overscroll-behavior:contain;min-height:0;min-width:0;padding:12px;background:#215348;border-left:4px solid #7b9e7b;scrollbar-width:thin;scrollbar-color:#b9d0a2 transparent}
+#gameTasks::before{content:'AKTIVITI MISI';display:block;margin:0 0 8px;color:#fff1bf;letter-spacing:.14em;font:bold 12px sans-serif}
+#gameTasks:has(#cameraPanel:not([hidden]))::before{content:'KAWALAN INTERAKTIF'}
+#gameTasks #activity{display:flex;flex-direction:column;gap:8px;align-items:stretch;margin:0;padding:0;color:#fdf2ce;max-width:none}
+#gameTasks #activity p{margin:4px 0 7px;line-height:1.35}
+#gameTasks #activity button{max-width:100%;width:100%;text-align:left;padding:7px 10px;font-size:clamp(12px,1.04vw,15px);line-height:1.3;min-height:38px;white-space:normal}
+#gameTasks #activity .response-panel{padding:10px;font-size:clamp(12px,1.04vw,15px)}
+#gameTasks #activity .response-panel h2,#gameTasks #activity .response-panel h3{font-size:clamp(14px,1.3vw,19px);margin:8px 0}
+#gameTasks #activity .response-panel textarea{min-height:70px;font-size:14px}
+#gameTasks #activity .final-diagrams{grid-template-columns:1fr}
+#gameTasks #activity .final-diagrams figcaption{font-size:12px;min-height:auto}
+#gameActions{grid-column:1;grid-row:2;min-height:0;overflow:auto;padding:10px 14px;background:#244c40;border-top:3px solid #71916d;scrollbar-width:thin}
+#gameActions #controls{display:flex;align-items:flex-start;gap:8px;flex-wrap:wrap;margin:0;padding:0}
+#gameActions #controls button{min-height:42px;padding:7px 12px;font-size:clamp(12px,1vw,15px);max-width:100%}
+#cameraPanel{width:100%;max-width:none;margin:0 0 12px;padding:9px;border-width:2px}
+#cameraViewport{width:100%;max-width:none}
+#cameraControls button{min-height:36px;padding:6px 4px;font-size:12px}
+#cameraStatus{font-size:12px;min-height:auto}
+.cameraPrivacy{font-size:11px}
+#dialogue{position:absolute;top:2%;left:1.5%;z-index:7;display:flex;align-items:flex-start;gap:7px;width:min(43%,465px);max-width:calc(100% - 18px);min-height:0;max-height:34%;margin:0;padding:5px;background:#214963ed;border:2px solid #f8e8c2;border-radius:8px;box-shadow:0 4px 0 #173d45b0;color:#fff5dc;overflow:hidden;transition:max-height .17s ease;pointer-events:auto}
+#dialogue #portrait{width:clamp(34px,4vw,58px);height:clamp(43px,5.1vw,70px);border-radius:5px;flex:0 0 auto;object-fit:contain}
+#dialogue .dialogue-box{background:transparent;color:inherit;border:0;padding:3px 0 0;box-shadow:none;min-height:0;line-height:1.3;flex:1;min-width:0;margin:0}
+#dialogue .nameplate{position:static;display:block;width:max-content;margin:0 0 4px;padding:0 6px;color:#4c3622;background:#fff0c7;border:1px solid #523d2c;border-radius:3px;font-size:clamp(11px,1vw,14px);letter-spacing:.06em}
+#dialogue #speech{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;max-height:3.1em;color:#fff7df;font-size:clamp(11px,1vw,14px);line-height:1.45;text-shadow:none;margin:0 0 4px}
+#dialogue .dialogue-actions{display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+#dialogue #listen{padding:3px 7px;font-size:11px;min-height:27px}
+#dialogue #voiceStatus{display:none;font-size:11px;color:#ffe3ae;margin:0}
+#dialogToggle{align-self:flex-start;border:1px solid #f1dcae;background:#244b5f;color:#fff6dc;box-shadow:none;border-radius:4px;padding:4px 6px;min-height:30px;font-size:10px;line-height:1.2;white-space:nowrap}
+#dialogue.expanded{max-height:77%;width:min(65%,620px);overflow:auto;background:#214963f5}
+#dialogue.expanded #speech{display:block;max-height:none;overflow:visible;font-size:clamp(12px,1.05vw,15px);-webkit-line-clamp:unset}
+#dialogue.expanded #voiceStatus{display:inline}
+#dialogue.expanded .dialogue-actions{gap:7px}
+#title{top:31%;left:5%;max-width:60%}
+#title h1{font-size:clamp(25px,4vw,57px)}
+#objective{left:auto;right:8px;bottom:8px;max-width:65%;text-align:right;z-index:2;font-size:clamp(10px,1.2vw,15px)}
+#assemblyBoard .parts-tray{top:33%;left:2%;z-index:6;max-width:96%}
+#assemblyBoard .parts-tray button{font-size:clamp(10px,1vw,14px);padding:5px 7px}
+#spots .spot{font-size:clamp(10px,1vw,15px);padding:5px 6px}
+#spots .part-hotspot{padding:1px}
+#gameTasks .response-panel select,#gameTasks .response-panel input{min-width:0}
+#gameTasks #cameraPanel[hidden]{display:none!important}
+@media (max-width:1100px) and (min-width:781px){
+ #gameShell{grid-template-columns:minmax(0,71%) minmax(0,29%);grid-template-rows:minmax(0,1fr) minmax(80px,29%)}
+ #gameTasks{padding:7px}
+ #gameTasks #activity button{font-size:12px;padding:6px}
+ #dialogue{width:min(47%,370px);max-height:39%}
+ #dialogue #portrait{width:38px;height:48px}
+ #gameActions{padding:7px}
+ #gameActions #controls button{min-height:36px;padding:5px 7px}
+ #cameraPanel{padding:6px}
+ #cameraControls{gap:5px}
+ #cameraControls button{font-size:11px}
+}
+/* A portrait phone cannot legibly fit an entire lesson into a fixed 16:9 height.
+   Keep the actual game viewport 16:9 and move activities and camera below it. */
+@media (max-width:780px){
+ #gameShell{display:flex;flex-direction:column;aspect-ratio:auto;max-width:100%;overflow:visible;border:3px solid #3c624d;border-radius:10px;margin-bottom:14px}
+ #playWorkspace,#playWorkspace.camera-active{display:block;order:0;padding:3px;overflow:visible;width:100%}
+ #stage{width:100%;height:auto;aspect-ratio:16/9;border:2px solid #6e957b;border-radius:5px;box-shadow:none;overflow:hidden}
+ #gameActions{order:1;border-top:2px solid #71916d;padding:8px;max-height:none;overflow:visible}
+ #gameTasks{order:2;border-left:0;border-top:2px solid #71916d;max-height:none;overflow:visible;width:100%;padding:10px}
+ #gameTasks #activity{display:flex;flex-direction:row;flex-wrap:wrap;align-items:stretch}
+ #gameTasks #activity button{width:auto;flex:1 1 150px;font-size:13px}
+ #gameTasks #activity .response-panel{width:100%}
+ #gameTasks #activity .final-diagrams{grid-template-columns:1fr 1fr}
+ #gameActions #controls{gap:7px}
+ #gameActions #controls button{font-size:13px;min-height:42px;padding:7px 10px}
+ #cameraPanel{width:100%;max-width:440px;margin:0 auto 12px}
+ #cameraViewport{max-width:390px}
+ #dialogue{max-height:42%;width:min(62%,310px);padding:3px;gap:4px;z-index:7}
+ #dialogue #portrait{width:29px;height:39px}
+ #dialogue .nameplate{font-size:10px;padding:0 4px}
+ #dialogue #speech{font-size:10px;line-height:1.2;max-height:2.6em;margin:0}
+ #dialogue #listen{font-size:9px;padding:2px 3px;min-height:23px}
+ #dialogToggle{font-size:9px;min-height:24px;padding:3px}
+ #dialogue.expanded{width:min(94%,430px);max-height:90%}
+ #dialogue.expanded #speech{font-size:12px;line-height:1.3}
+ #title{top:27%;left:4%;max-width:80%}
+ #title h1{font-size:clamp(22px,5vw,34px)}
+ #title p{font-size:10px;padding:4px 5px}
+ #objective{bottom:5px;right:4px;font-size:10px;max-width:66%;padding:4px 6px}
+ #spots .spot{font-size:clamp(9px,1.8vw,12px);padding:3px 4px;min-height:26px}
+ #assemblyBoard .parts-tray{top:30%;gap:4px}
+ #assemblyBoard .parts-tray button{font-size:10px;padding:4px}
+ #assemblyBoard .targets button{width:clamp(28px,7vw,54px);height:clamp(26px,7vw,50px);font-size:11px}
+}
+@media(max-width:440px){
+ #dialogue{width:72%;max-height:46%}
+ #dialogue #portrait{width:25px;height:34px}
+ #title{top:32%}
+ #title h1{font-size:clamp(20px,5.3vw,28px)}
+ #gameTasks #activity{flex-direction:column}
+ #gameTasks #activity button{width:100%;flex:auto;text-align:left}
+ #gameTasks #activity .final-diagrams{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion:reduce){#dialogue{transition:none}}
+
+
+/* Keep default dialogue compact so hot-spots at 28–32% height remain uncovered. */
+#dialogue:not(.expanded){max-height:23%;min-height:0}
+#dialogue:not(.expanded) #speech{-webkit-line-clamp:1;max-height:1.5em}
+#dialogue:not(.expanded) #listen{display:none}
+@media(max-width:780px){
+ #dialogue:not(.expanded){max-height:25%;width:min(65%,300px)}
+ #dialogue:not(.expanded) #portrait{width:25px;height:31px}
+ #dialogue:not(.expanded) .nameplate{margin:0 0 1px}
+}
+@media(max-width:440px){#dialogue:not(.expanded){width:min(69%,260px)}}
+
+/* Friendly guide in otherwise empty 16:9 mission sidebar. */
+#gameTasks #activity:empty{display:block}
+#gameTasks #activity:empty::before{content:'Teroka lokasi dan komponen pada peta. Dengar arahan Alya atau pilih butang misi di bahagian bawah.';display:block;padding:14px 12px;border:2px dashed #b8d5b0;border-radius:9px;color:#f8efd1;line-height:1.6;font-size:clamp(13px,1.1vw,16px);background:#183e38}
+
+
+/* Phase 4: self-selected Alya TTS language, installed voice and speed controls. */
+#voiceSettings{display:grid;grid-template-columns:1fr;gap:10px;border:2px solid #8aa88b;background:#f7f1d9;color:#2d4b38;border-radius:12px;padding:14px;margin:10px 0 16px;min-width:0}
+#voiceSettings legend{font-weight:800;padding:0 8px;font-size:clamp(16px,2vw,20px)}
+#voiceSettings label{display:flex;flex-direction:column;gap:5px;margin:0;min-width:0}
+#voiceSettings select{width:100%;max-width:100%;min-height:44px;text-overflow:ellipsis;font-size:clamp(14px,2.5vw,17px);background:#fff9ec}
+#voiceSettings #voiceRate{width:100%;cursor:pointer;accent-color:#477d63}
+#voiceSettings #voiceRateLabel{font-weight:800;font-size:15px}
+#voiceSettings #testVoice{justify-self:start;min-height:44px;background:#d2efca}
+#voicePreviewStatus{font-size:14px;line-height:1.5;color:#275944;min-height:24px;font-weight:700;overflow-wrap:anywhere;margin:3px 0}
+#voiceSettings .voiceHint{font-size:13px;color:#53634c;line-height:1.5;margin:0}
+@media(max-width:600px){#voiceSettings{padding:10px}#voiceSettings select{font-size:14px}#voiceSettings legend{font-size:15px}}
+
+
+/* Phase 4 UI bugfix: the old #objective used top AND bottom offsets simultaneously,
+   stretching a chocolate-coloured rectangle over nearly the entire game canvas.
+   It is now a normal mission summary in the sidebar, never an overlay on art. */
+#gameTasks #objective.mission-brief{
+  position:static!important;inset:auto!important;top:auto!important;bottom:auto!important;
+  left:auto!important;right:auto!important;display:block!important;
+  width:100%!important;max-width:100%!important;min-height:0!important;height:auto!important;
+  color:#1c4b3a;background:#e8f3db;border:2px solid #91b29a;border-radius:8px;
+  box-shadow:none;text-align:left;font:700 clamp(13px,1.1vw,16px)/1.48 "Trebuchet MS",Arial,sans-serif;
+  overflow-wrap:anywhere;word-break:normal;white-space:normal;
+  padding:10px 12px;margin:0 0 12px;pointer-events:auto!important;z-index:auto!important
+}
+#gameTasks #objective.mission-brief:empty{display:none!important}
+#gameTasks #activity:empty::before{margin-top:0}
+#gameTasks #activity button{overflow-wrap:anywhere}
+#gameTasks,#gameActions{scrollbar-gutter:stable}
+#gameTasks .response-panel{max-width:100%;min-width:0}
+#gameTasks input,#gameTasks select,#gameTasks textarea{box-sizing:border-box;max-width:100%}
+#gameShell button:focus-visible,#gameShell a:focus-visible{outline:3px solid #ffdb6d;outline-offset:2px}
+@media(max-width:780px){
+  #gameTasks #objective.mission-brief{font-size:14px;padding:10px 12px;margin-bottom:10px}
+  #gameTasks,#gameActions{scrollbar-gutter:auto}
+  #gameActions button{min-height:44px}
+  #gameTasks #activity button{min-height:44px}
+}
+@media(max-width:460px){
+  #gameTasks #objective.mission-brief{font-size:14px;line-height:1.5}
+  #gameActions{padding:9px}
+  #gameActions #controls{gap:9px}
+  #gameActions #controls button{flex:1 1 140px;font-size:13px;white-space:normal;overflow-wrap:anywhere}
+}
+
+
+/* Phase 4 assembly controls: keep draggable component tray clear of the upper-left
+   Alya bubble and A/B/C targets. The same validator works for pointer, touch and hand. */
+#stage:has(#assemblyBoard) #assemblyBoard .parts-tray{
+  top:25%!important;bottom:auto!important;left:3%!important;right:auto!important;
+  max-width:94%;display:flex;flex-wrap:wrap;gap:5px;z-index:6
+}
+#stage:has(#assemblyBoard) #assemblyBoard .parts-tray button{
+  min-height:35px;max-width:100%;white-space:normal;overflow-wrap:anywhere
+}
+@media(max-width:780px){
+  #stage:has(#assemblyBoard) #assemblyBoard .parts-tray{
+    top:auto!important;bottom:1%!important;left:1%!important;right:1%!important;
+    width:98%;max-width:98%;justify-content:space-evenly;gap:2px
+  }
+  #stage:has(#assemblyBoard) #assemblyBoard .parts-tray button{
+    min-height:28px;padding:3px 4px;flex:1 1 30%;font-size:clamp(9px,1.75vw,12px)
+  }
+}
+
+
+/* Phase 4B — scientific stage-by-stage guide beside the four 16:9 diagrams. */
+.science-guide{width:100%;min-width:0;background:#f6f4d8;color:#265046;border:2px solid #82a88b;border-radius:10px;padding:10px;line-height:1.45;box-shadow:0 3px #163f3540}
+.science-guide h3{font-size:clamp(14px,1.2vw,18px);margin:0 0 8px}
+.science-guide .science-dots{display:flex;gap:5px;flex-wrap:wrap;margin:0 0 8px}
+.science-guide [data-guide-dot]{display:inline-grid;place-items:center;width:27px;height:27px;border:2px solid #76a18e;border-radius:50%;font-weight:900;font-size:13px;color:#48705b;background:#e4ead1}
+.science-guide [data-guide-dot].active{background:#337966;border-color:#e5c77b;color:#fff7dd}
+.science-guide [data-active-stage]{background:white;border-left:5px solid #45907f;padding:8px 10px;border-radius:6px;min-height:85px}
+.science-guide [data-active-stage] strong{display:block;font-size:clamp(12px,1vw,16px)}
+.science-guide [data-active-stage] p{font-size:clamp(12px,1vw,15px);margin:5px 0 0!important}
+.science-guide .science-disclaimer{font-size:11px;line-height:1.4;margin:8px 0!important;color:#536f64}
+.science-guide .science-navigation{display:flex;gap:6px}
+#gameTasks #activity .science-navigation button{min-height:40px;width:50%;flex:1;font-size:clamp(11px,1vw,13px);text-align:center;padding:6px!important;white-space:normal}
+/* Phase 4E — interactive learning booklet and manual teacher rubric. */
+.mission-book{width:100%;max-width:950px;margin:auto}
+.mission-book h2{margin:0 0 10px}
+.book-tabs{display:flex;flex-wrap:wrap;gap:7px;margin:12px 0 16px}
+.book-tabs button{flex:1 1 170px;min-height:45px;background:#e5ebd5;font-weight:700}
+.book-tabs button.active{background:#386e5d;color:#fff6d9;border-color:#efc977;box-shadow:0 3px #204c40}
+.book-section-head{border-left:6px solid #5b9878;background:#eff5d9;padding:11px 14px;border-radius:7px;margin-bottom:12px}
+.book-section-head h3{margin:0 0 4px;font-size:clamp(17px,1.8vw,23px)}
+.book-section-head p{margin:0;font-size:14px}
+.knowledge-grid,.badge-grid,.rubric-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:12px 0 18px}
+.knowledge-card{border:3px solid #8db18c;background:#fcf6df;color:#2d5244;border-radius:12px;padding:13px;box-shadow:0 4px 0 #a4b58d;min-width:0}
+.knowledge-card header{display:flex;align-items:center;gap:9px;max-width:none;padding:0;margin:0 0 8px;background:transparent;color:#2c5e4c;font-size:clamp(15px,1.25vw,19px)}
+.knowledge-card header span{font-size:23px}
+.knowledge-card p{white-space:pre-wrap;line-height:1.55;overflow-wrap:anywhere;margin:0;font-size:14px}
+.badge-tile{border:3px dashed #bcc4a7;border-radius:10px;background:#eeeee1;text-align:center;padding:12px 10px;opacity:.83;color:#526352}
+.badge-tile.collected{opacity:1;background:#f9ecc5;border:3px solid #d4a55c;color:#745137}
+.badge-tile>span{font-size:32px;display:block}
+.badge-tile strong{display:block;font-size:15px}
+.badge-tile p{margin:5px 0}
+.badge-tile small{font-size:12px}
+.book-history{display:grid;gap:8px}
+.book-history article{border-left:5px solid #98ac8b;background:#f2f4e8;padding:10px 12px;border-radius:6px}
+.book-history small{display:block;color:#57705b;margin-top:3px;font-size:12px}
+.book-history p{white-space:pre-wrap;overflow-wrap:anywhere}
+.book-note{font-size:13px;line-height:1.55;color:#4c6557;padding:10px 12px;background:#eef2e5;border:1px solid #b2c3b0;border-radius:6px}
+.rubric-card{background:#f6f3de;border:2px solid #b3c49e;border-radius:10px;padding:12px;line-height:1.5}
+.rubric-card h4{font-size:16px;margin:0 0 8px}
+.rubric-card p{font-size:13px;margin:9px 0}
+#teacherRubric{padding:14px;background:#eaf2df;border:2px solid #99b49a;border-radius:12px}
+#teacherRubric label{display:grid;gap:7px;margin:12px 0;font-weight:600;line-height:1.35}
+#teacherRubric select,#teacherRubric textarea{width:100%;max-width:100%;border:2px solid #a1b6a3;border-radius:7px;padding:9px;min-height:44px;background:white;color:#244e3b;font:inherit}
+#teacherRubric textarea{min-height:95px}
+#teacherRubric button{min-height:44px;background:#ffe9a5}
+.book-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
+.book-actions button{flex:1 1 190px;min-height:44px;font-size:14px;padding:9px}
+.pbd-print-table{border-collapse:collapse;width:100%;margin:12px 0}
+.pbd-print-table td,.pbd-print-table th{border:1px solid #9cae9a;padding:8px;text-align:left;font-size:13px}
+.worksheet .answer-lines{height:100px;margin:12px 0;background:repeating-linear-gradient(to bottom,transparent 0 28px,#a8bbaa 29px,#a8bbaa 30px)}
+@media(max-width:650px){.knowledge-grid,.rubric-grid{grid-template-columns:1fr}.badge-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.book-tabs button{flex:1 1 130px}.science-guide [data-active-stage]{min-height:0}.book-actions button{flex:1 1 150px}}
+@media print{.book-tabs,.book-actions{display:none!important}.worksheet .answer-lines{height:110px}}
+
+
+/* Phase 4 remaining-category polish: device safe areas, accessible activity controls, print. */
+#gameShell,#gameTasks,#gameActions{min-width:0}
+#gameTasks .science-guide button,#gameTasks .book-actions button{touch-action:manipulation}
+#modalBody{overflow-wrap:anywhere}
+.book-history article,.knowledge-card,.rubric-card,.badge-tile{break-inside:avoid;page-break-inside:avoid}
+#gameTasks .science-guide .science-navigation{justify-content:space-between}
+#gameTasks .response-panel input:focus-visible,#gameTasks .response-panel textarea:focus-visible,#gameTasks .response-panel select:focus-visible,#teacherRubric :focus-visible{outline:3px solid #edb95f;outline-offset:2px}
+@media(max-width:780px){
+  body{padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px)}
+  #gameShell{max-width:100%}
+  #gameActions,#gameTasks{overflow-wrap:anywhere}
+  #gameTasks .science-guide{padding:12px}
+  #gameTasks .science-guide [data-active-stage]{min-height:60px}
+}
+@media(max-width:480px){
+  #gameTasks .knowledge-grid{grid-template-columns:1fr}
+  #gameTasks .response-panel{padding:10px}
+  #modalBody .book-tabs button{font-size:14px;padding:9px;flex-basis:115px}
+}
+@media print{
+ .worksheet{color:#141b15!important;background:#fff!important}
+ .worksheet h2,.worksheet h3{break-after:avoid}
+ .worksheet .answer-lines{break-inside:avoid}
+ .worksheet .answer-lines + h3{break-before:auto}
+ .worksheet p{orphans:2;widows:2}
+ .pbd-print-table{border:1px solid #444!important}
+ .pbd-print-table tr{break-inside:avoid}
+}
+
+
+/* Phase 4 final dialogue: full subtitles live in the activity rail, not across the play map. */
+#gameTasks #dialogueTranscript[hidden]{display:none!important}
+#gameTasks .dialogue-transcript{display:block;background:#fff5da;color:#204839;border:2px solid #87b09b;border-radius:10px;padding:12px;margin:0 0 12px;box-shadow:0 3px 0 #173b2a44;overflow-wrap:anywhere}
+#gameTasks .transcript-heading{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:0 0 9px}
+#gameTasks .transcript-heading strong{font-size:clamp(14px,1.15vw,18px)}
+#gameTasks #transcriptClose{min-width:38px;min-height:38px;font-size:19px;text-align:center}
+#gameTasks #transcriptText{white-space:pre-wrap;font-size:clamp(13px,1vw,16px);line-height:1.55;margin:0 0 10px}
+#gameTasks .transcript-actions{display:flex;flex-wrap:wrap;gap:7px}
+#gameTasks .transcript-actions button{flex:1 1 115px;min-height:42px;text-align:center!important}
+#gameTasks #transcriptStatus{font-size:12px;color:#346657;margin:9px 0 0;line-height:1.45}
+#voiceSettings #refreshVoices{min-height:40px;margin:0 0 8px}
+#voiceSettings #voicePitch{width:100%;accent-color:#477d63}
+.device-results{padding:10px 13px;border:2px solid #aac9a8;border-radius:8px;background:#eff5df;line-height:1.4}
+.device-results p{margin:7px 0}
+#checkCameraPermission,#backToSettings{min-height:44px;margin:7px 6px 7px 0}
+@media(max-width:780px){#gameTasks .dialogue-transcript{padding:13px}#gameTasks #transcriptText{font-size:15px}#gameTasks .transcript-actions button{min-height:44px}}
+@media print{#dialogueTranscript,.device-results,#deviceCheck{display:none!important}}
+
+
+/* Phase 4 A/D/E: cohesive pixel station panels and usable device / teacher workflow. */
+.lesson-checklist{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:12px 0 20px}
+.lesson-checklist article{background:#f9f5de;border:2px solid #a9c39a;border-radius:10px;padding:11px;display:grid;grid-template-columns:26px 1fr;gap:4px 7px;min-width:0}
+.lesson-checklist article span{font-size:22px;color:#3d8266;line-height:1.2}
+.lesson-checklist article strong{font-size:14px;line-height:1.4;color:#285847}
+.lesson-checklist article small{grid-column:2;color:#496d59;margin:0;font-size:12px;line-height:1.4}
+.lesson-timeline{display:grid;gap:8px;margin:12px 0}
+.lesson-timeline article{padding:12px 14px;border-left:5px solid #72a887;background:#f5f4e4;border-radius:8px}
+.lesson-timeline article strong{font-size:14px;color:#2a634f}
+.lesson-timeline article p{margin:5px 0 0;font-size:13px;line-height:1.45}
+.book-glossary{margin:18px 0;background:#f1f4e6;border:2px solid #b3cba9;border-radius:12px;padding:12px}
+.book-glossary summary{font-weight:800;font-size:15px;cursor:pointer;padding:6px;outline-offset:4px}
+.book-glossary summary:focus-visible{outline:3px solid #e1b464}
+.book-glossary .knowledge-grid{margin-top:12px}
+#modalBody .mission-book{max-width:900px}
+#modalBody .book-tabs button:focus-visible,#modalBody .book-actions button:focus-visible{outline:3px solid #b68a33;outline-offset:2px}
+#gameShell{isolation:isolate}
+#gameTasks .response-panel,#gameTasks .science-guide,#gameTasks .mission-brief{max-width:100%}
+#gameTasks #activity .science-guide button{min-height:44px}
+#gameActions #controls button,#gameTasks button{touch-action:manipulation}
+#stage .spot{outline-offset:2px}
+#stage .spot:focus-visible{outline:3px solid #fbe37e}
+@media(min-width:781px) and (max-height:630px){
+ #gameShell{margin-bottom:8px}
+ #gameTasks{padding:7px}
+ #gameTasks #objective.mission-brief{padding:7px 9px;font-size:12px}
+ #gameTasks #activity button{min-height:35px}
+ #gameActions{padding:6px 8px}
+ #gameActions #controls button{min-height:36px}
+}
+@media(max-width:780px){
+ #gameTasks{scroll-margin-top:12px}
+ #gameActions #controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+ #gameActions #controls button{width:100%;min-height:44px}
+ #gameTasks #activity .science-guide{width:100%}
+ .lesson-checklist{grid-template-columns:1fr}
+}
+@media(max-width:390px){
+ #gameActions #controls{grid-template-columns:1fr}
+ #dialogue:not(.expanded){max-height:23%}
+ #gameTasks .mission-brief{font-size:13px}
+}
+@media print{
+ .lesson-checklist,.lesson-timeline{display:block}
+ .lesson-timeline article,.lesson-checklist article{break-inside:avoid;page-break-inside:avoid}
+ .book-glossary{break-inside:avoid}
+ #printContent{font-family:Arial,sans-serif!important;font-size:11pt!important;line-height:1.45!important}
+}
+</style><body><header><button id="home">⌂ <span>Bandar Hijau</span></button><span id="status">RBT • Tahun 5</span><button id="book">Buku Misi</button><button id="settings">Tetapan</button></header><main><div id="gameShell" aria-label="Paparan permainan 16:9"><div id="playWorkspace"><section id="stage"><canvas id="world" width="640" height="360" aria-label="Bandar piksel interaktif"></canvas><div id="spots"></div><div id="title"></div><section id="dialogue" aria-label="Dialog Alya"><canvas id="portrait" width="80" height="96"></canvas><div class="dialogue-box"><strong class="nameplate">ALYA <small>Rakan penerokaan kamu</small></strong><p id="speech"></p><div class="dialogue-actions"><button id="listen">Dengar Semula</button><span id="voiceStatus"></span></div></div><button type="button" id="dialogToggle" aria-expanded="false" aria-controls="dialogueTranscript" title="Papar dialog penuh Alya">Buka dialog</button></section></section></div><aside id="gameTasks" aria-label="Aktiviti misi"><div id="objective" class="mission-brief" aria-label="Arahan misi semasa"></div><section id="dialogueTranscript" class="dialogue-transcript" aria-label="Dialog penuh Alya" hidden><div class="transcript-heading"><strong>ALYA · Dialog Penuh</strong><button id="transcriptClose" type="button" aria-label="Tutup dialog penuh">×</button></div><p id="transcriptText"></p><div class="transcript-actions"><button id="transcriptListen" type="button">Dengar Semula</button><button id="transcriptPause" type="button">Jeda Suara</button></div><p id="transcriptStatus" role="status"></p></section><aside id="cameraPanel" aria-label="Pratonton kamera untuk Misi 3" hidden><div class="camera-header"><strong>Pratonton Kamera</strong><span id="cameraIndicator">Kamera dimatikan</span></div><div id="cameraViewport"><video id="camera" aria-label="Paparan kamera secara langsung" autoplay muted playsinline hidden></video><div id="cameraPlaceholder"><span aria-hidden="true">📷</span><p>Kamera akan dipaparkan di sini selepas diaktifkan.</p></div></div><p id="cameraStatus" role="status">Gunakan tetikus atau sentuhan, atau aktifkan Kawalan Tangan.</p><div id="cameraControls"></div><p class="cameraPrivacy">Kamera hanya dibuka dengan izin. Video tidak dirakam.</p></aside><section id="activity"></section></aside><div id="gameActions"><section id="controls"></section></div></div></main><dialog id="modal"><button id="close">Tutup ×</button><div id="modalBody"></div></dialog><div id="toast" role="status"></div><script>
+const definition='Pertanian bandar ialah aktiviti bercucuk tanam di kawasan bandar dengan memanfaatkan ruang yang ada, seperti balkoni, halaman rumah, tanah lot dan kebun komuniti, untuk menghasilkan tanaman makanan. Penanaman boleh dijalankan secara konvensional atau menggunakan teknologi moden.';
 const places=[
 {id:'pangsa',name:'Rumah Pangsa',npc:'Kak Mira',topic:'Balkoni yang menghijau',text:'Saya menanam sawi dalam pasu di balkoni. Ruang kecil pun boleh menghasilkan makanan sendiri. Pilih bekas tanaman di balkoni untuk melihat tanaman kami.',items:[['Pasu sawi','Sawi ditanam dalam pasu berisi tanah. Ini contoh kaedah konvensional yang sesuai untuk ruang terhad.'],['Botol guna semula','Botol terpakai yang sesuai boleh dijadikan bekas tanaman. Penggunaan semula bahan membantu memelihara alam sekitar.']]},
 {id:'teres',name:'Rumah Teres',npc:'Pak Azman',topic:'Kebun tumbuh ke atas',text:'Halaman saya sempit. Saya menyusun tanaman secara bertingkat pada dinding dan menggantung pasu. Mari periksa kedua-dua susunan itu.',items:[['Rak bertingkat','Susunan bertingkat dan menegak menjimatkan ruang. Sayur dan herba boleh ditanam di sekitar rumah.'],['Pasu gantung','Pasu gantung menggunakan ruang yang ada secara kreatif. Susunan yang kemas mencantikkan kawasan rumah.']]},
@@ -15,20 +420,106 @@ const places=[
 const systems=[{name:'Kultur Air Dalam (Tanpa Kitaran Semula)',text:'Larutan nutrien berada dalam takungan dalam keadaan statik, tidak dikitar semula. Akar terendam dalam larutan untuk menyerap nutrien. Tiada pam untuk mengitar larutan nutrien.',parts:[['Akar tanaman','Akar terendam dalam larutan nutrien dan menyerap air serta nutrien.'],['Raga tanaman','Raga memegang pokok yang ditanam.'],['Penutup takung','Penutup memegang raga tanaman dan mengelakkan larutan nutrien terdedah kepada cahaya matahari.'],['Larutan nutrien','Larutan disimpan dalam takungan. Larutan tidak dipam atau dikitar semula.']]},{name:'Kultur Air Dalam (Dengan Kitaran Semula)',text:'Pam menolak larutan nutrien dari tangki melalui salur air masuk ke palung tanaman. Larutan kemudian mengalir melalui salur air keluar kembali ke tangki nutrien. Kitaran ini membekalkan air dan nutrien kepada akar.',parts:[['Pam','Pam menolak larutan nutrien dari tangki ke palung tanaman.'],['Salur air masuk','Salur ini membawa larutan nutrien yang dipam ke palung tanaman.'],['Palung & akar','Raga memegang tanaman. Akar bersentuhan dengan larutan nutrien di dalam palung.'],['Salur air keluar','Larutan mengalir kembali dari palung ke tangki nutrien untuk dikitar semula.']]}];
 systems.push({name:'Akuaponik',text:'Akuaponik menggabungkan ternakan ikan dengan tanaman. Bahan buangan ikan diuraikan; mikroorganisma menukarkan ammonia kepada nitrit dan kemudian nitrat yang boleh diserap tanaman. Pam membawa air bernutrien ke tanaman dan air kembali ke tangki ikan.',parts:[['Tangki ikan','Ikan menghasilkan bahan buangan. Air tangki membawa bahan ini ke bahagian penapisan dan mikroorganisma.'],['Mikroorganisma','Mikroorganisma bermanfaat menukar ammonia kepada nitrit, kemudian nitrat, iaitu nutrien yang boleh diserap oleh akar.'],['Pam akuaponik','Pam mengalirkan air dari tangki melalui bahagian mikroorganisma ke tanaman.'],['Akar & salur kembali','Akar menyerap nutrien. Air mengalir kembali ke tangki ikan; ikan, mikroorganisma dan tanaman saling berkaitan.']]},
 {name:'Bekas Pengairan Kendiri',text:'Air dari ruang air naik melalui bahan penyerap dalam ruang partikel kapilari ke medium tanaman melalui tindakan kapilari. Akar menyerap air daripada medium. Sistem ini tidak memerlukan pam.',parts:[['Penanda aras air','Menunjukkan aras air dalam takungan supaya kita tahu bila air perlu ditambah.'],['Saluran air','Laluan mengisi air ke dalam takungan di bahagian bawah.'],['Ruang medium','Ruang medium tanaman menyokong akar dan menerima air daripada bahan kapilari.'],['Ruang partikel kapilari','Bahan penyerap yang bersentuhan dengan air membawa air ke medium melalui tindakan kapilari.'],['Ruang air','Takungan menyimpan bekalan air di bahagian bawah bekas.'],['Lubang limpah air','Air berlebihan keluar melalui lubang ini supaya aras air tidak meningkat sehingga membanjiri ruang medium.']]});
-const badgeNames=['Peneroka Pertanian Bandar','Pakar Sistem Takungan','Pakar Makmal'];
-function freshProgress(mode='kendiri'){return {version:2,started:false,scene:'map',visited:[],notes:[],badges:[],stamps:[],answers:[],drafts:{},hints:[],inspected:[[],[],[],[]],summarySeen:false,assembly:[],simulationSeen:false,mode,vol:{voice:.8,music:.15,sfx:.5},muted:false};}
+
+/* RPH Lampiran 2 & 3: these are TEACHER-AWARDED activity marks, NOT official DSKP TP.
+   Keep all five observations; class-mode discussion is not individual PBD evidence. */
+const pbdChecklist=[
+ 'Murid menerangkan maksud pertanian bandar dengan tepat.',
+ 'Murid memberikan sekurang-kurangnya satu contoh pertanian bandar yang sesuai.',
+ 'Murid menerangkan fungsi komponen utama bagi sistem penanaman.',
+ 'Murid menjelaskan cara air/larutan nutrien dibekalkan dalam dua sistem.',
+ 'Murid menggunakan maklumat pemerhatian untuk menjelaskan punca gangguan sistem.'
+];
+const pbdRubric=[
+ {sp:'7.1.1',title:'Maksud pertanian bandar',levels:[
+  'Belum dapat menerangkan maksud dengan tepat atau contoh tidak sesuai.',
+  'Menerangkan sebahagian konsep dengan contoh sesuai tetapi penerangan belum lengkap.',
+  'Menerangkan konsep bercucuk tanam di kawasan bandar/ruang terhad dengan jelas dan memberikan contoh sesuai.'
+ ]},
+ {sp:'7.1.2',title:'Cara sistem berfungsi',levels:[
+  'Belum dapat menjelaskan operasi dua sistem dengan tepat walaupun selepas bimbingan.',
+  'Menjelaskan dua sistem tetapi ada komponen atau langkah aliran yang belum lengkap/sedikit tidak tepat.',
+  'Menjelaskan dua sistem, komponen berkaitan dan aliran air/nutrien dengan tepat dan jelas.'
+ ]}
+];
+
+
+/* Quick reference: vocabulary is supplementary; the target SPs remain 7.1.1 & 7.1.2. */
+const vocabulary=[
+ ['Pertanian bandar','Aktiviti bercucuk tanam di kawasan bandar menggunakan ruang yang ada, termasuk ruang terhad di kediaman dan kebun komuniti.'],
+ ['Takungan','Bekas atau ruang untuk menyimpan air atau larutan nutrien bagi sistem penanaman.'],
+ ['Larutan nutrien','Air yang mengandungi nutrien diperlukan oleh tanaman untuk pertumbuhan.'],
+ ['Kitaran semula','Larutan nutrien dialirkan melalui sistem dan dikembalikan ke tangki untuk digunakan semula.'],
+ ['Akuaponik','Sistem yang menggabungkan ternakan ikan dengan tanaman. Mikroorganisma bermanfaat membantu memproses bahan buangan ikan menjadi nutrien untuk tumbuhan.'],
+ ['Partikel kapilari','Bahan yang membantu pergerakan air dari takung ke medium tanaman. Contoh dalam DSKP ialah bebola air atau tempurung kelapa sawit.'],
+ ['Medium penanaman','Bahan yang menyokong akar dan pertumbuhan tanaman, contohnya peatmoss, vermiculite atau perlite.'],
+ ['Pam','Komponen yang mengalirkan air atau larutan nutrien dalam sistem tertentu; bekas pengairan kendiri tidak memerlukan pam.']
+];
+const lessonTimeline=[
+ ['Set Induksi',5,'Perkenalkan isu ruang terhad dan objektif pelajaran.'],
+ ['Misi 1',8,'Perhatikan contoh dan terangkan maksud pertanian bandar (SP 7.1.1).'],
+ ['Misi 2',14,'Kenal pasti jenis, komponen dan aliran empat sistem takungan.'],
+ ['Misi 3',10,'Teroka komponen dan tindakan kapilari melalui simulasi.'],
+ ['Misi 4',8,'Jelaskan punca kegagalan pam atau partikel kapilari.'],
+ ['Misi 5',10,'Terangkan maksud, bandingkan dua sistem dan beri alasan.'],
+ ['Penutup',5,'Rumuskan pembelajaran; guru mengumpul bukti dan membuat penilaian PBD.']
+];
+
+function freshCase(){return {observed:[],choices:[],diagnosed:false,predicted:false,repaired:false,explained:false};}
+const badgeNames=['Peneroka Pertanian Bandar','Pakar Sistem Takungan','Pakar Makmal','Penyelamat Sistem Penanaman','Wira Pertanian Bandar'];
+function freshProgress(mode='kendiri'){return {version:3,started:false,scene:'map',visited:[],notes:[],badges:[],stamps:[],answers:[],drafts:{},hints:[],inspected:[[],[],[],[]],summarySeen:false,assembly:[],simulationSeen:false,cases:[freshCase(),freshCase()],repairLog:[],finalDone:[],cards:[],completedAt:null,mode,vol:{voice:.8,music:.22,sfx:.5},muted:false,autoVoice:true,musicEnabled:true,voiceLanguage:'id-ID',voiceId:'auto',voiceRate:1.1,voicePitch:1,pbd:{scores:{'7.1.1':null,'7.1.2':null},checks:['','','','',''],comment:'',studentName:'',assessedAt:null}};}
 function normalizeProgress(raw,mode='kendiri'){
  const base=freshProgress(mode);if(!raw||typeof raw!=='object')return base;
  for(const k of ['visited','notes','badges','stamps','answers','hints','assembly'])if(Array.isArray(raw[k]))base[k]=raw[k];
- base.badges=[...new Set(base.badges.filter(n=>[1,2,3].includes(n)))];
+ base.badges=[...new Set(base.badges.filter(n=>[1,2,3,4,5].includes(n)))];
  base.assembly=[...new Set(base.assembly.filter(n=>['level','inlet','capillary'].includes(n)))];
  base.inspected=base.inspected.map((_,i)=>Array.isArray(raw.inspected?.[i])?[...new Set(raw.inspected[i])]:[]);
- base.scene=['map','pangsa','teres','kebun','lab','sim0','sim1','sim2','sim3','workshop','flow','gate4'].includes(raw.scene)?raw.scene:'map';
+ base.scene=['map','pangsa','teres','kebun','lab','sim0','sim1','sim2','sim3','workshop','flow','gate4','repair0','repair1','final0','final1','final2','ending'].includes(raw.scene)?raw.scene:'map';
+ base.cases=base.cases.map((c,i)=>{const old=raw.cases?.[i];if(!old)return c;for(const k of ['observed','choices'])if(Array.isArray(old[k]))c[k]=old[k];for(const k of ['diagnosed','predicted','repaired','explained'])c[k]=old[k]===true;return c});base.repairLog=Array.isArray(raw.repairLog)?raw.repairLog:[];base.finalDone=Array.isArray(raw.finalDone)?[...new Set(raw.finalDone.filter(n=>[0,1,2].includes(n)))]:[];base.cards=Array.isArray(raw.cards)?raw.cards:[];base.completedAt=Number.isFinite(raw.completedAt)&&[1,2,3,4,5].every(id=>base.badges.includes(id))?raw.completedAt:null;if(base.scene==='ending'&&!base.completedAt)base.scene='map';
  base.started=!!(raw.started||base.visited.length||base.answers.length||base.badges.length);base.summarySeen=!!raw.summarySeen;base.simulationSeen=!!raw.simulationSeen;
- base.drafts=raw.drafts&&typeof raw.drafts==='object'?raw.drafts:{};base.muted=!!raw.muted;
- for(const k of Object.keys(base.vol))if(Number.isFinite(raw.vol?.[k]))base.vol[k]=Math.max(0,Math.min(1,raw.vol[k]));return base;
+ base.drafts=raw.drafts&&typeof raw.drafts==='object'?raw.drafts:{};base.muted=!!raw.muted;base.autoVoice=raw.autoVoice!==false;base.musicEnabled=raw.musicEnabled!==false;base.voiceLanguage=typeof raw.voiceLanguage==='string'&&/^[a-z]{2,3}([-_][a-zA-Z]{2,4})?$/.test(raw.voiceLanguage)?raw.voiceLanguage:'id-ID';base.voiceId=typeof raw.voiceId==='string'&&raw.voiceId.length<250?raw.voiceId:'auto';base.voiceRate=Number.isFinite(raw.voiceRate)?Math.max(.65,Math.min(1.5,raw.voiceRate)):1.1;base.voicePitch=Number.isFinite(raw.voicePitch)?Math.max(.8,Math.min(1.3,raw.voicePitch)):1;
+ for(const k of Object.keys(base.vol))if(Number.isFinite(raw.vol?.[k]))base.vol[k]=Math.max(0,Math.min(1,raw.vol[k]));
+ // Teacher-only manual activity rubric, never official TP and never inferred from badge counts.
+ if(raw.pbd&&typeof raw.pbd==='object'){
+  for(const sp of ['7.1.1','7.1.2'])if([1,2,3].includes(raw.pbd.scores?.[sp]))base.pbd.scores[sp]=raw.pbd.scores[sp];
+  if(Array.isArray(raw.pbd.checks))base.pbd.checks=base.pbd.checks.map((_,i)=>['ya','belum'].includes(raw.pbd.checks[i])?raw.pbd.checks[i]:'');
+  if(typeof raw.pbd.comment==='string')base.pbd.comment=raw.pbd.comment.slice(0,3000);
+  if(typeof raw.pbd.studentName==='string')base.pbd.studentName=raw.pbd.studentName.slice(0,120);
+  if(Number.isFinite(raw.pbd.assessedAt))base.pbd.assessedAt=raw.pbd.assessedAt;
+ }
+ return base;
 }
-function loadProfiles(storage){let profiles={kendiri:freshProgress(),kelas:freshProgress('kelas')},mode='kendiri';const raw=JSON.parse(storage.getItem('misi-bandar-v2')||'null');if(raw){mode=raw.mode==='kelas'?'kelas':'kendiri';for(const m of ['kendiri','kelas'])profiles[m]=normalizeProgress(raw.profiles?.[m],m)}else{const old=JSON.parse(storage.getItem('misi-bandar-v1')||'null');if(old){mode=old.mode==='kelas'?'kelas':'kendiri';profiles[mode]=normalizeProgress(old,mode)}}return {profiles,mode};}
+function loadProfiles(storage){
+ let profiles={kendiri:freshProgress(),kelas:freshProgress('kelas')},mode='kendiri',warning='';
+ const read=key=>{
+  let encoded;
+  try{encoded=storage.getItem(key)}catch{warning='Simpanan pelayar tidak tersedia. Eksport rekod selepas bermain.';return null}
+  if(!encoded)return null;
+  try{
+   const value=JSON.parse(encoded);
+   if(!value||typeof value!=='object'||Array.isArray(value))throw Error('Rekod bukan objek');
+   return value;
+  }catch{
+   // Never silently delete malformed save data. Keep original bytes in a recovery key.
+   try{
+    const recoveryKey=key+'-recovery';
+    if(!storage.getItem(recoveryKey))storage.setItem(recoveryKey,encoded);
+   }catch{}
+   warning='Rekod lama tidak dapat dibaca. Salinan pemulihan disimpan jika ruang pelayar mencukupi. Gunakan Import Sandaran sebelum memulakan semula.';
+   return null;
+  }
+ };
+ const current=read('misi-bandar-v2');
+ if(current&&current.profiles&&typeof current.profiles==='object'){
+  mode=current.mode==='kelas'?'kelas':'kendiri';
+  for(const m of ['kendiri','kelas'])profiles[m]=normalizeProgress(current.profiles[m],m);
+ }else{
+  const old=read('misi-bandar-v1');
+  if(old){mode=old.mode==='kelas'?'kelas':'kendiri';profiles[mode]=normalizeProgress(old,mode)}
+ }
+ return {profiles,mode,warning};
+}
+
 // Side-view models; coordinates shared with assembly targets.
 const assemblyParts=[{id:'level',name:'Penanda aras air',x:28,y:48},{id:'inlet',name:'Saluran air',x:72,y:48},{id:'capillary',name:'Bahan kapilari',x:50,y:70}];
 function drawScience(canvas,type,time,installed=['level','inlet','capillary'],greenhouse=false){
@@ -54,34 +545,351 @@ function drawScience(canvas,type,time,installed=['level','inlet','capillary'],gr
  text('Ruang partikel kapilari',249,231);text('Air → bahan kapilari → medium → akar',170,344);
  }
 }
+
+
+/* Educational animations: four distinct systems, synchronised with a readable guide.
+   These symbols illustrate the direction of water/nutrient movement; they are not to scale. */
+const learningStages=[
+ [
+  ['Larutan statik','Larutan nutrien statik disimpan dalam takungan, tanpa pam untuk mengitar larutan.'],
+  ['Akar menyerap','Akar yang bersentuhan dengan larutan mengambil air dan nutrien.'],
+  ['Tiada aliran kembali','Tiada salur air keluar untuk mengitar larutan. Pantau aras dan keadaan larutan.']
+ ],
+ [
+  ['Pam mengalirkan larutan','Pam menolak larutan dari tangki nutrien ke palung tanaman.'],
+  ['Akar mendapat nutrien','Akar tanaman bersentuhan dengan larutan di dalam palung.'],
+  ['Larutan kembali','Larutan mengalir melalui salur keluar ke tangki untuk dikitar semula.']
+ ],
+ [
+  ['Bahan buangan ikan','Ikan menghasilkan bahan buangan yang menyumbang ammonia kepada air.'],
+  ['Mikroorganisma nitrifikasi','Mikroorganisma bermanfaat menukarkan ammonia kepada nitrit, kemudian nitrat.'],
+  ['Akar menyerap nitrat','Tanaman menggunakan nitrat sebagai nutrien; air kemudian kembali ke tangki ikan.']
+ ],
+ [
+  ['Takungan air','Air disimpan di ruang air di bawah medium tanaman.'],
+  ['Sentuhan bahan kapilari','Bahagian bawah bahan kapilari mesti menyentuh air dalam takungan.'],
+  ['Air naik ke medium','Tindakan kapilari mengalirkan air melalui bahan penyerap ke medium.'],
+  ['Akar menyerap air','Akar menyerap air daripada medium tanpa memerlukan pam.']
+ ]
+];
+function stageIndex(system,time){
+ const steps=learningStages[system]||[];
+ return steps.length?Math.floor(Math.max(0,Number.isFinite(time)?time:0)/3)%steps.length:0;
+}
+function drawFlowOverlay(canvas,system,time){
+ const c=canvas.getContext('2d'),step=stageIndex(system,time);
+ const dot=(x,y,colour,size=7)=>{c.fillStyle='#194744';c.fillRect(Math.round(x)-1,Math.round(y)-1,size+2,size+2);c.fillStyle=colour;c.fillRect(Math.round(x),Math.round(y),size,size)};
+ const moving=(points,colour,speed=55,count=10)=>{
+  const lens=points.slice(1).map((p,i)=>Math.hypot(p[0]-points[i][0],p[1]-points[i][1]));
+  const total=lens.reduce((a,b)=>a+b,0);if(!total)return;
+  for(let n=0;n<count;n++){let d=((Math.max(0,time)*speed+n*total/count)%total+total)%total;
+   for(let i=0;i<lens.length;i++){if(d<=lens[i]){const u=lens[i]?d/lens[i]:0;dot(points[i][0]+(points[i+1][0]-points[i][0])*u,points[i][1]+(points[i+1][1]-points[i][1])*u,colour,4);break}d-=lens[i]}}
+ };
+ if(system===0){
+  // Static deep-water culture: particles stay in the reservoir; uptake goes into roots, not round a loop.
+  for(let n=0;n<8;n++)dot(170+n*41,253+Math.sin(time*.7+n)*3,'#ecf9b0',3);
+  if(step===1){for(let x of [210,320,430])moving([[x,250],[x,210],[x,181]],'#e9fb9a',22,3)}
+ }else if(system===1){
+  // Circulating deep-water culture, exactly follows the existing pump–inlet–trough–return route.
+  moving([[250,286],[119,286],[119,127],[166,127],[174,160],[486,160],[486,264],[450,264],[250,286]],'#ffe48c',50,13);
+ }else if(system===2){
+  // Aquaponics: distinguish waste -> nitrification -> root uptake, without suggesting plants eat ammonia.
+  if(step===0)moving([[265,260],[194,260],[180,188],[130,188]],'#f2b861',35,8);
+  if(step===1){
+   for(let n=0;n<5;n++){dot(126+n*13,164+Math.sin(time*2+n)*6,n%2?'#f7de88':'#95dd87',5)}
+  }
+  if(step===2)moving([[190,115],[250,115],[350,112],[455,112]],'#a5e58d',45,8);
+ }else if(system===3){
+  // Self-watering system: reservoir -> wick -> medium -> roots, NO pump or return circulation.
+  moving([[320,280],[320,247],[320,215],[320,185],[320,150]],'#f5ffad',25,7);
+ }
+ // Small stage counter on the upper right; the full explanation stays in the separate task rail.
+ const label=(step+1)+'/'+learningStages[system].length;
+ c.fillStyle='#173d34d9';c.fillRect(557,12,69,27);
+ c.fillStyle='#f9f1c7';c.font='bold 15px sans-serif';c.fillText(label,573,30);
+}
+
 function mountAssembly(root,placed,onPlace,feedback){
  root.innerHTML='<div class="parts-tray" aria-label="Komponen"></div><div class="targets"></div><div class="hand-cursor" hidden></div>';
  let selected=null,start=null,dragged=false;const tray=root.querySelector('.parts-tray'),targets=root.querySelector('.targets');
  function choose(id){if(placed.includes(id))return;selected=id;root.querySelectorAll('[data-part]').forEach(b=>b.classList.toggle('selected',b.dataset.part===id));feedback('Dipilih: '+assemblyParts.find(p=>p.id===id).name+'. Letakkan pada ruang yang sesuai.');}
- function drop(target){if(!selected)return;if(selected!==target){feedback('Belum tepat. Perhatikan fungsi dan kedudukan komponen. Cuba lagi.');selected=null;return}placed.push(selected);onPlace(selected);selected=null;render();feedback('Betul! Komponen dipasang pada kedudukan yang sesuai.');}
- function render(){tray.replaceChildren();targets.replaceChildren();for(const p of assemblyParts){const b=document.createElement('button');b.textContent=(placed.includes(p.id)?'✓ ':'')+p.name;b.dataset.part=p.id;b.disabled=placed.includes(p.id);b.onclick=()=>choose(p.id);b.onpointerdown=e=>{if(b.disabled)return;choose(p.id);start={x:e.clientX,y:e.clientY};dragged=false;b.setPointerCapture(e.pointerId)};b.onpointermove=e=>{if(start&&Math.hypot(e.clientX-start.x,e.clientY-start.y)>8)dragged=true};b.onpointerup=e=>{if(start&&dragged){const target=document.elementFromPoint(e.clientX,e.clientY)?.closest('[data-target]');if(target)drop(target.dataset.target);else feedback('Lepaskan pada salah satu ruang bertanda.')}start=null};b.onpointercancel=()=>{start=null;selected=null};tray.append(b);
- const target=document.createElement('button');target.dataset.target=p.id;target.textContent=placed.includes(p.id)?'✓':({level:'A',inlet:'B',capillary:'C'}[p.id]);target.setAttribute('aria-label','Ruang '+target.textContent);target.style.left=p.x+'%';target.style.top=p.y+'%';target.onclick=()=>drop(p.id);targets.append(target)}}
+ function drop(target){if(!selected){feedback('Pilih komponen terlebih dahulu, kemudian pilih ruang A, B atau C.');return}if(selected!==target){selected=null;render();feedback('Belum tepat. Perhatikan fungsi dan kedudukan komponen. Cuba lagi.');return}placed.push(selected);onPlace(selected);selected=null;render();feedback('Betul! Komponen dipasang pada kedudukan yang sesuai.');}
+ function render(){tray.replaceChildren();targets.replaceChildren();for(const p of assemblyParts){const b=document.createElement('button');b.textContent=(placed.includes(p.id)?'✓ ':'')+p.name;b.dataset.part=p.id;b.disabled=placed.includes(p.id);b.onclick=()=>choose(p.id);b.onpointerdown=e=>{if(b.disabled)return;choose(p.id);start={x:e.clientX,y:e.clientY};dragged=false;b.setPointerCapture(e.pointerId)};b.onpointermove=e=>{if(start&&Math.hypot(e.clientX-start.x,e.clientY-start.y)>8)dragged=true};b.onpointerup=e=>{if(start&&dragged){const target=document.elementFromPoint(e.clientX,e.clientY)?.closest('[data-target]');if(target)drop(target.dataset.target);else feedback('Lepaskan pada salah satu ruang bertanda.')}start=null};b.onpointercancel=()=>{start=null;selected=null;render();feedback('Seretan dibatalkan. Pilih komponen semula.')};tray.append(b);
+ const target=document.createElement('button');target.dataset.target=p.id;target.textContent=placed.includes(p.id)?'✓':({level:'A',inlet:'B',capillary:'C'}[p.id]);target.setAttribute('aria-label','Ruang '+target.textContent);target.title='Ruang '+target.textContent+' — pilih komponen yang sepadan';target.style.left=p.x+'%';target.style.top=p.y+'%';target.onclick=()=>drop(p.id);targets.append(target)}}
  render();return {hand(x,y,phase){const cursor=root.querySelector('.hand-cursor');cursor.hidden=false;cursor.style.left=x+'px';cursor.style.top=y+'px';const box=root.getBoundingClientRect();const el=document.elementFromPoint(box.left+x,box.top+y);if(phase==='grab'&&el?.dataset.part)choose(el.dataset.part);if(phase==='release'){if(el?.dataset.target)drop(el.dataset.target);else{selected=null;feedback('Letakkan komponen pada ruang bertanda.')}}},hide(){selected=null;root.querySelector('.hand-cursor').hidden=true}};
 }
+
 // MediaPipe runs inference locally. No frames are sent or recorded.
 class HandControl {
- constructor(video,status,onPoint){this.video=video;this.status=status;this.onPoint=onPoint;this.generation=0;this.stop();}
+ constructor(video,status,onPoint){this.video=video;this.report=status;this.onPoint=onPoint;this.generation=0;this.lastStatus='';this.lastStatusAt=0;this.lastInferAt=0;this.status=(message)=>{const now=performance.now();if(message!==this.lastStatus||now-this.lastStatusAt>2400){this.lastStatus=message;this.lastStatusAt=now;this.report(message)}};this.stop();}
  async start(){this.stop();const token=this.generation;this.status('Meminta kamera…');try{
  if(!window.isSecureContext||!navigator.mediaDevices?.getUserMedia)throw Error('Gunakan HTTPS atau localhost dan pelayar yang menyokong kamera.');
  const stream=await navigator.mediaDevices.getUserMedia({video:{width:640,height:480,facingMode:'user'},audio:false});if(token!==this.generation){stream.getTracks().forEach(t=>t.stop());return}this.stream=stream;this.video.srcObject=stream;await this.video.play();this.status('Memuatkan pengecaman tangan…');
  const vision=await import('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.21/vision_bundle.mjs');
  const files=await vision.FilesetResolver.forVisionTasks('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.21/wasm');
- const detector=await vision.HandLandmarker.createFromOptions(files,{baseOptions:{modelAssetPath:'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task'},runningMode:'VIDEO',numHands:1});
+ const detector=await vision.HandLandmarker.createFromOptions(files,{baseOptions:{modelAssetPath:'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task'},runningMode:'VIDEO',numHands:2});
  if(token!==this.generation){detector.close();return}this.detector=detector;this.calibrate();this.loop();
  }catch(e){if(token!==this.generation)return;this.stop();this.status('Kamera tidak tersedia: '+e.message+' Gunakan Tetikus / Sentuhan atau Cuba Semula.')}}
- calibrate(){this.samples=[];this.center=null;this.smooth=null;this.pinched=false;this.stable=0;this.status('Kalibrasi: letakkan tangan terbuka di tengah kamera selama seketika.');}
- loop(){if(!this.detector)return;if(document.hidden||document.querySelector('dialog[open]')){this.raf=requestAnimationFrame(()=>this.loop());return}try{if(this.video.readyState>=2&&this.video.currentTime!==this.lastTime){this.lastTime=this.video.currentTime;const result=this.detector.detectForVideo(this.video,performance.now());const p=result.landmarks[0];if(p){const raw={x:1-p[8].x,y:p[8].y};const scale=Math.hypot(p[0].x-p[9].x,p[0].y-p[9].y)||.1;const ratio=Math.hypot(p[4].x-p[8].x,p[4].y-p[8].y)/scale;
- if(!this.center){if(ratio>.5)this.samples.push(raw);else this.samples=[];if(this.samples.length>=25){this.center={x:this.samples.reduce((s,p)=>s+p.x,0)/25,y:this.samples.reduce((s,p)=>s+p.y,0)/25};this.status('Sedia. Gerakkan jari telunjuk; cubit untuk ambil, buka untuk letak.')}}else{
+ calibrate(){this.samples=[];this.center=null;this.smooth=null;this.trackedX=null;this.missingFrames=0;this.pinched=false;this.stable=0;this.status('Kalibrasi: letakkan tangan terbuka di tengah kamera selama seketika.');}
+ loop(){if(!this.detector)return;if(document.hidden||document.querySelector('dialog[open]')){this.raf=requestAnimationFrame(()=>this.loop());return}try{if(this.video.readyState>=2&&this.video.currentTime!==this.lastTime&&performance.now()-this.lastInferAt>=50){this.lastInferAt=performance.now();this.lastTime=this.video.currentTime;const result=this.detector.detectForVideo(this.video,performance.now());const candidates=result.landmarks||[];
+ let p=candidates[0];
+ if(candidates.length>1&&Number.isFinite(this.trackedX)){p=candidates.reduce((best,hand)=>Math.abs((1-hand[8].x)-this.trackedX)<Math.abs((1-best[8].x)-this.trackedX)?hand:best,p)}
+ if(p){this.missingFrames=0;const raw={x:1-p[8].x,y:p[8].y};this.trackedX=raw.x;const scale=Math.hypot(p[0].x-p[9].x,p[0].y-p[9].y)||.1;const ratio=Math.hypot(p[4].x-p[8].x,p[4].y-p[8].y)/scale;
+ if(!this.center){if(ratio>.5)this.samples.push(raw);else this.samples=[];if(this.samples.length>=18){this.center={x:this.samples.reduce((s,p)=>s+p.x,0)/18,y:this.samples.reduce((s,p)=>s+p.y,0)/18};this.status('Sedia. Gerakkan jari telunjuk; cubit untuk ambil, buka untuk letak.')}}else{
  const point={x:Math.max(0,Math.min(1,.5+(raw.x-this.center.x)*1.6)),y:Math.max(0,Math.min(1,.5+(raw.y-this.center.y)*1.6))};this.smooth=this.smooth?{x:this.smooth.x*.65+point.x*.35,y:this.smooth.y*.65+point.y*.35}:point;
  const desired=this.pinched?ratio<.55:ratio<.32;this.stable=desired!==this.pinched?this.stable+1:0;let phase='move';if(this.stable>=3){this.pinched=desired;this.stable=0;phase=desired?'grab':'release'}this.status('Sedia. Cubit untuk ambil; buka untuk letak.');this.onPoint(this.smooth.x,this.smooth.y,phase);
- }}else{this.status('Tangan tidak dikesan. Tunjukkan tangan kepada kamera.');this.pinched=false;this.stable=0;this.onPoint(0,0,'lost')}}}catch(e){this.stop();this.status('Pengecaman terhenti. Gunakan tetikus atau cuba semula.');return}this.raf=requestAnimationFrame(()=>this.loop())}
- stop(){this.generation++;cancelAnimationFrame(this.raf);this.stream?.getTracks().forEach(t=>t.stop());this.stream=null;this.detector?.close();this.detector=null;if(this.video)this.video.srcObject=null;this.lastTime=-1;}
+ }}else{this.missingFrames++;if(this.missingFrames>=5){this.status('Tangan tidak dikesan. Tunjukkan tangan kepada kamera.');this.pinched=false;this.stable=0;this.trackedX=null;this.onPoint(0,0,'lost')}}}}catch(e){this.stop();this.status('Pengecaman terhenti. Gunakan tetikus atau cuba semula.');return}this.raf=requestAnimationFrame(()=>this.loop())}
+ stop(){this.generation++;cancelAnimationFrame(this.raf);this.stream?.getTracks().forEach(t=>t.stop());this.stream=null;this.detector?.close();this.detector=null;if(this.video)this.video.srcObject=null;this.lastTime=-1;this.lastInferAt=0;}
 }
+
+const repairCases=[{
+ name:'Kes 1 — Pam Tidak Dihidupkan',question:'Mengapakah larutan nutrien tidak dapat mengalir dalam sistem ini?',
+ clues:[['Pam','Suis pam berada pada kedudukan MATI. Pam tidak menolak larutan nutrien.'],['Tangki nutrien','Tangki masih mengandungi larutan nutrien. Kekurangan larutan bukan punca masalah ini.'],['Salur air masuk','Salur tersambung, tetapi tiada aliran dipam ke atas.'],['Palung tanaman','Akar tidak menerima bekalan larutan yang beredar dari tangki.'],['Salur air keluar','Salur kembali tersambung ke tangki. Kitaran terhenti apabila pam mati.']],
+ causes:['Tangki kosong','Pam tidak dihidupkan','Penutup takung berwarna gelap'],correct:1,
+ hint:'Periksa suis pam. Tangki masih mempunyai larutan, tetapi apakah yang menolak larutan ke atas?',
+ repair:'Hidupkan Pam',explain:'Jelaskan fungsi pam dalam sistem Kultur Air Dalam (Dengan Kitaran Semula).',
+ note:'Pam menolak larutan nutrien dari tangki melalui salur air masuk ke palung tanaman. Larutan kembali melalui salur air keluar ke tangki. Tanpa pam hidup, kitaran tidak berjalan.'
+},{name:'Kes 2 — Bahan Kapilari Tidak Bersentuhan dengan Air',question:'Air masih terdapat di dalam takungan. Mengapakah medium tanaman tidak menerima air?',
+ clues:[['Penanda aras air','Penanda menunjukkan air masih ada di bawah bekas.'],['Ruang air','Bekalan air belum habis. Perhatikan jarak antara air dan bahan kapilari.'],['Bahan kapilari','Hujung bahan kapilari terangkat dan tidak menyentuh air. Terdapat ruang udara di antaranya.'],['Ruang medium','Medium kering kerana bahan kapilari tidak dapat menyerap air daripada takungan.']],
+ causes:['Sistem ini memerlukan pam','Bahan kapilari tidak menyentuh air','Semua air sudah habis'],correct:1,
+ hint:'Air masih ada. Adakah bahan penyerap benar-benar bersentuhan dengan permukaan air?',
+ repair:'Turunkan Bahan Kapilari ke Dalam Air',explain:'Bagaimanakah air bergerak dari takungan ke medium tanaman?',
+ note:'Bahan kapilari mesti bersentuhan dengan air. Tindakan kapilari membawa air dari ruang air melalui bahan penyerap ke medium tanaman dan akar, tanpa menggunakan pam.'
+}];
+const finalPrompts=[
+ 'Terangkan maksud pertanian bandar dan berikan satu contoh yang sesuai.',
+ 'Jelaskan cara berfungsi kedua-dua sistem penanaman ini dalam membekalkan air atau nutrien kepada tanaman. Terangkan pam dan kitaran larutan, serta bahan kapilari dan tindakan kapilari.',
+ 'Seorang penduduk rumah pangsa mempunyai balkoni yang kecil dan ingin menanam sayur-sayuran. Pilih satu sistem penanaman secara takungan yang sesuai dan berikan satu alasan bagi pilihan kamu.'
+];
+const finalTitles=['Cabaran 1 — Apa Itu Pertanian Bandar?','Cabaran 2 — Bagaimanakah Sistem Berfungsi?','Cabaran 3 — Pilih Sistem yang Sesuai'];
+
+function createPhase3(api){
+ const {$,btn,spot,say,save,go,modal,esc,toast,award,answerForm}=api;
+ const get=()=>api.state();let repairedAt=0;
+ const record=(id,text,extra={})=>{const s=get();s.answers.push({id,text,kind:s.mode==='kelas'?'class_discussion':'individual',...extra,mode:s.mode,time:Date.now(),attempt:s.answers.filter(a=>a.id===id).length+1});delete s.drafts[id];save()};
+ const event=(i,type,detail={})=>{get().repairLog.push({case:i,type,...detail,time:Date.now(),mode:get().mode});save()};
+ function replay(target){if(target==='gate4'&&get().badges.includes(4)){get().cases=[freshCase(),freshCase()];event(-1,'replay')}if(target==='final0'&&get().badges.includes(5)){get().finalDone=[];save()}go(target)}
+ function centre(){say('Alya menerima panggilan kecemasan! Dua sistem di pusat pertanian tidak membekalkan air dengan baik. Mari perhati, kenal pasti punca, ramal, baiki dan jelaskan.','repair-intro');$('#objective').textContent='Misi 4 · Operasi Selamatkan Tanaman · 8 minit';spot('Kes 1 · Pam',27,70,()=>go('repair0'));spot('Kes 2 · Bahan kapilari',73,70,()=>go('repair1'));$('#activity').innerHTML='<p>'+get().cases.map((c,i)=>`Kes ${i+1}: ${c.explained?'Selesai':'Belum selesai'}`).join(' · ')+'</p>';const finish=btn('Selesaikan Misi 4',()=>award(4,'final0'));finish.disabled=!get().cases.every(c=>c.repaired&&c.explained);btn('Main Semula Misi',api.missionMenu);btn('Kembali ke Bandar',()=>go('map'))}
+ function repair(i){const d=repairCases[i],c=get().cases[i];repairedAt=0;$('#objective').textContent=d.name;
+ say(c.repaired?d.note:d.question,(c.repaired?'repair-note-':'repair-')+i);$('#activity').innerHTML='<p id="repairStage" role="status"></p><div id="clues" class="action-row"></div><div id="repairActions" class="action-row"></div>';
+ d.clues.forEach(([name,text],j)=>{const b=btn((c.observed.includes(j)?'✓ ':'')+name,()=>{if(!c.observed.includes(j)){c.observed.push(j);event(i,'observe',{component:name})}b.textContent='✓ '+name;say(text,`repair-${i}-${j}`);actions()},'#clues');b.dataset.clue=j});
+ const observedPoints=i===0?[[40,79],[53,77],[20,52],[55,47],[76,67]]:[[29,44],[50,80],[50,64],[50,44]];
+ d.clues.forEach(([name],j)=>{const p=observedPoints[j];const h=btn(String(j+1),()=>{$('#clues [data-clue="'+j+'"]').click()},'#spots','spot part-hotspot');h.style.left=p[0]+'%';h.style.top=p[1]+'%';h.title=name;h.setAttribute('aria-label','Periksa '+name)});
+ const repairPoint=i===0?[46,85]:[60,72];const repairHotspot=btn('◉',()=>{if(!c.predicted){toast('Perhatikan sistem, kenal pasti punca dan buat ramalan dahulu.');return}const repairButton=[...document.querySelectorAll('#repairActions button')].find(b=>b.textContent===d.repair);if(repairButton)repairButton.click();else toast('Pembaikan ini telah dijalankan.')},'#spots','spot part-hotspot');repairHotspot.style.left=repairPoint[0]+'%';repairHotspot.style.top=repairPoint[1]+'%';repairHotspot.title='Baiki '+(i===0?'pam':'bahan kapilari');repairHotspot.setAttribute('aria-label','Baiki '+(i===0?'pam':'bahan kapilari'));
+ if(get().mode==='kelas')btn('Paparkan Semua Petunjuk',()=>{d.clues.forEach(([name],j)=>{if(!c.observed.includes(j)){c.observed.push(j);event(i,'class_observe',{component:name,kind:'class_demo'})}});say('Semua komponen telah diperhatikan bersama kelas. Bincangkan punca masalah.');actions()},'#clues');
+ function actions(){const box=$('#repairActions');box.replaceChildren();$('#repairStage').textContent=c.explained?'Jelaskan · Selesai':c.repaired?'Jelaskan · Sistem sudah dibaiki':c.predicted?'Baiki':c.diagnosed?'Ramal':'Perhati → Kenal Pasti Punca';
+ if(!c.diagnosed){const b=btn('Kenal Pasti Punca',()=>{modal('<h2>'+d.question+'</h2><div id="causes"></div><p id="causeFeedback" role="alert"></p>');d.causes.forEach((choice,n)=>btn(choice,()=>{c.choices.push({choice,correct:n===d.correct,time:Date.now()});event(i,'diagnosis',{choice,correct:n===d.correct});if(n!==d.correct){api.effect?.('error');$('#causeFeedback').textContent='Belum tepat. Semak petunjuk yang telah kamu lihat dan cuba lagi.';return}api.effect?.('correct');c.diagnosed=true;save();$('#modal').close();say('Punca dikenal pasti. Ramalkan apa yang akan berlaku selepas pembaikan.');actions()},'#causes'))},'#repairActions');b.disabled=c.observed.length<d.clues.length}
+ else if(!c.predicted){btn('Catat Ramalan',()=>{const done=()=>{c.predicted=true;event(i,'prediction');actions()};if(get().mode==='kelas')oral('Ramalkan perubahan aliran air selepas pembaikan.',`misi4-kes${i+1}-ramalan`,done);else answerForm(`misi4-kes${i+1}-ramalan`,'Apakah yang akan berlaku kepada aliran air atau larutan selepas pembaikan?',done)},'#repairActions')}
+ else if(!c.repaired){btn(d.repair,()=>{c.repaired=true;repairedAt=api.time();event(i,'repair',{success:true});if(!get().notes.includes('repair'+i))get().notes.push('repair'+i);save();say(d.note+' Animasi dipercepat: pemulihan tanaman berlaku secara beransur-ansur, bukan serta-merta.','repair-fixed-'+i);actions()},'#repairActions')}
+ else{btn('Jelaskan Pembaikan',()=>{const done=()=>{c.explained=true;event(i,'explanation');go('gate4')};if(get().mode==='kelas')oral(d.explain,`misi4-kes${i+1}`,done);else answerForm(`misi4-kes${i+1}`,d.explain,done)},'#repairActions');btn('Ulang Animasi Pembaikan',()=>{repairedAt=api.time()},'#repairActions')}
+ }
+ actions();btn('Petunjuk Kes',()=>{get().hints.push({mission:4,case:i,time:Date.now()});event(i,'hint');say(d.hint,'repair-hint-'+i)});btn('Kembali ke Operasi',()=>go('gate4'));
+ }
+ function oral(prompt,id,done){modal('<h2>Perbincangan Kelas</h2><p>'+esc(prompt)+'</p><p>Guru: minta murid menjelaskan secara lisan atau pada lembaran individu. Rekod ini hanya mengesahkan aktiviti kelas, bukan jawapan peribadi setiap murid.</p><label>Catatan guru (pilihan)<textarea id="oralNote" maxlength="5000"></textarea></label><button id="oralConfirm">Perbincangan telah dijalankan</button>');let used=false;$('#oralConfirm').onclick=()=>{if(used)return;used=true;record(id,$('#oralNote').value.trim(),{kind:'class_activity',individualAnswersCollected:false});$('#modal').close();done()}}
+ function finalScene(n){const s=get();if(s.mode!=='kelas'&&n>0&&!s.finalDone.includes(n-1)){go('final'+(n-1));return}$('#objective').textContent='Balai Bandar Hijau · '+finalTitles[n];say((n===0?'Tahniah! Kini, buktikan pengetahuan kamu melalui tiga cabaran terakhir! ':'')+finalPrompts[n],'final-'+n);
+ if(n===1){$('#activity').innerHTML='<div class="final-diagrams"><figure><figcaption>Kultur Air Dalam (Dengan Kitaran Semula)</figcaption><canvas id="finalPump" width="640" height="360"></canvas></figure><figure><figcaption>Bekas Pengairan Kendiri</figcaption><canvas id="finalCapillary" width="640" height="360"></canvas></figure></div>'}
+ const id='akhir'+n,last=s.answers.filter(a=>a.id===id).at(-1),draft=s.drafts[id]||last?.fields||{};
+ const wrapper=document.createElement('section');wrapper.className='response-panel';wrapper.id='finalForm';$('#activity').append(wrapper);
+ let html=s.mode==='kelas'?'<p><b>Mod Kelas:</b> Murid menjawab pada Lembaran Respons Individu. Komputer ini tidak mengumpul jawapan individu. Isian di bawah hanya contoh / catatan bersama dan boleh dibiarkan kosong.</p>':'';
+ const field=(key,label)=>`<label>${label}<textarea data-field="${key}" maxlength="5000">${esc(draft[key]||'')}</textarea></label>`;
+ if(n===0)html+=field('definition','Maksud pertanian bandar dan satu contoh');
+ if(n===1)html+=field('pump','Penerangan sistem dengan kitaran semula')+field('capillary','Penerangan bekas pengairan kendiri');
+ if(n===2)html+=`<label>Nama murid (pilihan)<input data-field="name" maxlength="100" value="${esc(draft.name||'')}"></label><label>Sistem pilihan<select data-field="system"><option value="">Pilih sistem</option>${systems.map((sys,i)=>`<option value="${i}" ${String(i)===draft.system?'selected':''}>${sys.name}</option>`).join('')}</select></label>`+field('reason','Alasan pemilihan')+field('components','Komponen utama yang kamu kenal pasti (pilihan; tidak diisi secara automatik)')+'<label><input type="checkbox" id="confirmChoice"> Saya mengesahkan pilihan dan alasan ini.</label>';
+ wrapper.innerHTML=html+'<p id="finalError" role="alert"></p>';
+ const values=()=>Object.fromEntries([...wrapper.querySelectorAll('[data-field]')].map(el=>[el.dataset.field,el.value.trim()]));wrapper.querySelectorAll('[data-field]').forEach(el=>el.oninput=()=>{s.drafts[id]=values();save()});
+ let used=false;btn(s.mode==='kelas'?'Sahkan Aktiviti pada Lembaran Individu':'Simpan Cabaran',()=>{if(used)return;const fields=values();const required=n===0?['definition']:n===1?['pump','capillary']:['system','reason'];if(s.mode!=='kelas'&&required.some(k=>!fields[k])){$('#finalError').textContent='Lengkapkan penerangan yang diperlukan dahulu.';return}if(n===2&&s.mode!=='kelas'&&!$('#confirmChoice').checked){$('#finalError').textContent='Sahkan pilihan dan alasan kamu dahulu.';return}used=true;
+ record(id,Object.entries(fields).map(([k,v])=>({definition:'Maksud dan contoh',pump:'Sistem dengan kitaran semula',capillary:'Bekas pengairan kendiri',name:'Nama',system:'Sistem pilihan',reason:'Alasan',components:'Komponen'}[k])+': '+(k==='system'?(v===''?'Belum dipilih':systems[Number(v)]?.name||'Belum dipilih'):v)).join('\n'),{fields,kind:s.mode==='kelas'?'class_activity':'individual',individualAnswersCollected:s.mode!=='kelas'});
+ if(n===1&&s.mode!=='kelas'){record('akhir-sistem-pam',fields.pump);record('akhir-sistem-kapilari',fields.capillary)}
+ if(!s.finalDone.includes(n))s.finalDone.push(n);
+ if(n===2){s.cards.push({name:fields.name||'',system:fields.system===''?null:Number(fields.system),reason:fields.reason||'',components:fields.components||'',time:Date.now(),mode:s.mode,kind:s.mode==='kelas'?'class_template':'individual'});save();if(s.finalDone.length===3){award(5,'ending')}else go('final'+[0,1,2].find(k=>!s.finalDone.includes(k)))}else{save();go('final'+(n+1))}
+ });
+ if(s.mode==='kelas'){[0,1,2].forEach(k=>btn('Paparkan Cabaran '+(k+1),()=>go('final'+k)));btn('Rumusan Pembelajaran',()=>modal('<h2>Rumusan</h2><p>Pertanian bandar menghasilkan makanan dengan menggunakan ruang terhad. Pam mengitar larutan nutrien. Tindakan kapilari membawa air melalui bahan penyerap tanpa pam. Pilihan sistem perlu disokong alasan yang sesuai.</p><p>Semak lembaran setiap murid secara berasingan. Penyelesaian misi bukan Tahap Penguasaan.</p>'))}
+ if(n>0)btn('Cabaran Sebelumnya',()=>go('final'+(n-1)));btn('Kembali ke Balai',api.missionMenu);
+ }
+ function card(){const c=get().cards.at(-1);if(!c){toast('Lengkapkan Cabaran 3 untuk menghasilkan kad.');return}const system=systems[c.system]?.name||'Belum diisi';modal(`<section id="printContent"><h2>Kad Pemilihan Sistem Penanaman</h2><p>${c.mode==='kelas'?'Templat / contoh kelas — bukan jawapan individu semua murid.':'Rekod pilihan murid'}</p><dl><dt>Nama Murid</dt><dd>${esc(c.name)||'________________'}</dd><dt>Sistem Penanaman yang Dipilih</dt><dd>${esc(system)}</dd><dt>Alasan Pemilihan</dt><dd>${esc(c.reason)||'________________'}</dd><dt>Komponen Utama Sistem</dt><dd>${esc(c.components)||'Belum diisi oleh murid'}</dd></dl><p>Untuk pembelajaran seterusnya: SP 7.1.3 — Melakar reka bentuk sistem penanaman secara takungan yang dipilih. Tiada lakaran diperlukan dalam permainan ini.</p></section><button id="printCard">Cetak Kad</button><button id="exportCard">Eksport Kad</button>`);$('#printCard').onclick=()=>window.print();$('#exportCard').onclick=()=>download('kad-pemilihan-sistem.json',c)}
+ function download(name,data){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
+ function report(){const s=get(),p=s.pbd||{scores:{},checks:[],comment:'',assessedAt:null};
+ const scoreTable='<table class="pbd-print-table"><thead><tr><th>Standard Pembelajaran</th><th>Skor Aktiviti Guru</th></tr></thead><tbody>'+pbdRubric.map(r=>'<tr><td>SP '+r.sp+' — '+esc(r.title)+'</td><td>'+(s.mode==='kelas'?'Tidak direkod':(p.scores[r.sp]||'Belum dinilai'))+'</td></tr>').join('')+'</tbody></table>';
+ const checklist='<h3>Senarai Semak Pemerhatian (RPH Lampiran 2)</h3>'+pbdChecklist.map((label,i)=>'<p>☐ '+esc(label)+' — '+(s.mode==='kelas'?'Semak pada lembaran individu':(p.checks[i]==='ya'?'Ya':p.checks[i]==='belum'?'Belum':'Belum direkod'))+'</p>').join('');
+ modal(`<section id="printContent"><h2>Laporan Pembelajaran</h2><p><strong>Nama murid:</strong> ${s.mode==="kelas"?"Rekod kelas (bukan individu)":esc(p.studentName||"Belum diisi")} · <strong>Tarikh penilaian:</strong> ${p.assessedAt?new Date(p.assessedAt).toLocaleDateString("ms-MY"):"Belum dinilai"}</p><p>${s.mode==='kelas'?'Aktiviti kelas; jawapan individu tidak dikumpul oleh komputer guru.':'Rekod pembelajaran kendiri.'}</p><p>Penyelesaian Misi ≠ Tahap Penguasaan. Guru menilai ketepatan maksud, contoh, fungsi komponen, urutan aliran dan alasan menggunakan rubrik.</p><h3>Rubrik Guru — SP 7.1.1 &amp; 7.1.2</h3><p>Skala 1–3 ialah skor aktiviti guru, bukan Tahap Penguasaan rasmi DSKP. Lencana tidak menentukan skor.</p>${scoreTable}${checklist}<p>Catatan guru: ${s.mode==='kelas'?'Semak jawapan individu secara berasingan.':esc(p.comment||'Belum direkod')}</p><h3>Rekod penyiasatan</h3>${s.repairLog.map(e=>`<p>Kes ${e.case+1} · ${esc(({observe:'Pemerhatian',diagnosis:'Pilihan punca',prediction:'Ramalan',repair:'Pembaikan berjaya',explanation:'Penerangan disimpan',hint:'Petunjuk digunakan',replay:'Main semula'})[e.type]||e.type)} · ${esc(e.choice||e.component||'')} · ${new Date(e.time).toLocaleString('ms-MY')}</p>`).join('')}<h3>Jawapan pertama dan pindaan</h3>${s.answers.map(a=>`<article><b>${esc(a.id)} · Cubaan ${a.attempt}</b><p>${esc(a.text)||'Aktiviti kelas disahkan; tiada jawapan individu direkodkan.'}</p><small>${new Date(a.time).toLocaleString('ms-MY')}</small></article>`).join('')}<h3>Cap tugasan</h3>${s.stamps.map(st=>`<p>Misi ${st.mission} · SELESAI · ${new Date(st.time).toLocaleString('ms-MY')}</p>`).join('')}</section><button id="printReport">Cetak Laporan</button>`);$('#printReport').onclick=()=>window.print()}
+ function worksheet(){
+  modal('<section id="printContent" class="worksheet"><h2>Lembaran Respons Individu — Misi Akhir</h2><p>Nama murid: __________________________ Kelas: __________ Tarikh: __________</p><h3>A. SP 7.1.1</h3><p>Terangkan maksud pertanian bandar dengan ayat sendiri dan berikan satu contoh.</p><div class="answer-lines"></div><h3>B. SP 7.1.2</h3><p>Jelaskan cara berfungsi kedua-dua sistem berikut.</p><p>1. Kultur Air Dalam (Dengan Kitaran Semula)</p><div class="answer-lines"></div><p>2. Bekas Pengairan Kendiri</p><div class="answer-lines"></div><h3>C. Situasi</h3><p>Penduduk rumah pangsa ingin menanam sayur-sayuran di balkoni kecil. Pilih satu sistem dan jelaskan alasan pilihan kamu.</p><div class="answer-lines"></div><p>Rubrik guru: SP 7.1.1 dan SP 7.1.2 (Skala Aktiviti 1–3, bukan TP automatik).</p></section><button id="printWorksheet">Cetak Lembaran Individu</button>');
+  $('#printWorksheet').onclick=()=>window.print();
+ }
+ function ending(){say('Tahniah, Wira Pertanian Bandar! Dalam pembelajaran seterusnya, kamu akan menggunakan sistem yang dipilih untuk menghasilkan lakaran reka bentuk.','ending');$('#objective').textContent=get().badges.length+'/5 Lencana Dikumpulkan · Tamat Permainan';$('#activity').innerHTML='<section class="response-panel"><h2>Bandar Hijau kembali subur!</h2><p>Rumusan: pertanian bandar menggunakan ruang terhad; sistem takungan membekalkan air kepada tanaman; komponen perlu dipasang dan diselenggara dengan betul. Pilihan sistem perlu disokong alasan.</p><p>Penyelesaian misi bukan Tahap Penguasaan. Jawapan disimpan untuk semakan guru.</p></section>';btn('Buku Misi Pertanian',api.book);btn('Kad Pemilihan Sistem Penanaman',card);btn('Main Semula Misi',api.missionMenu);btn('Kembali ke Skrin Utama',()=>go('home'))}
+ function draw(scene,time,canvas,art){if(scene.startsWith('repair')){const i=Number(scene.at(-1));drawRepair(canvas,i,get().cases[i].repaired,Math.max(0,time-repairedAt),art);return true}if(scene==='final1'){art.draw('lab',time);const a=$('#finalPump'),b=$('#finalCapillary');if(a)renderer(a).draw('sim1',time);if(b)drawScience(b,'self',time);return true}if(scene==='gate4'){art.draw('lab',time);return true}if(scene==='final0'||scene==='final2'){art.draw(scene==='final0'?'map':'pangsa',time);return true}if(scene==='ending'){art.draw('map',time);const c=canvas.getContext('2d');for(let n=0;n<Math.min(18,Math.floor(time*3));n++){const x=40+n*31,y=250+(n%3)*25;c.fillStyle='#276c42';c.fillRect(x,y,3,14);c.fillStyle='#6ac653';c.fillRect(x-5,y,13,5)}return true}return false}
+ return {centre,repair,finalScene,card,report,worksheet,ending,draw,replay};
+}
+function drawRepair(canvas,i,repaired,t,art){
+ const c=canvas.getContext('2d'),rect=(x,y,w,h,color)=>{c.fillStyle=color;c.fillRect(x,y,w,h)};
+ if(i===0){art.draw('sim1',repaired?t:0);if(repaired)drawFlowOverlay(canvas,1,t);else{rect(460,54,144,24,'#9e473d');c.fillStyle='#fff9e4';c.font='bold 14px sans-serif';c.fillText('PAM MATI',480,71)}}else{drawScience(canvas,'self',repaired?t:0,repaired?['level','inlet','capillary']:['level','inlet']);if(repaired)drawFlowOverlay(canvas,3,t);if(!repaired){rect(302,205,36,28,'#b5a470');rect(304,234,32,12,'#f2eed9');c.fillStyle='#a04738';c.font='12px sans-serif';c.fillText('Tidak menyentuh air',345,226)}}
+ // Replace foliage with a gradual schematic recovery, explicitly time-lapsed.
+ const xs=i===0?[225,330,435]:[320],base=i===0?115:139;const recovery=repaired?Math.min(t/8,1):0;
+ for(const x of xs){rect(x-20,base-44,44,43,'#f2eed9');rect(x,base-28,3,29,'#648448');c.save();c.translate(x,base-18);c.rotate((1-recovery)*.8);rect(-17,-6,17,8,recovery>.6?'#5ca451':'#a5a05e');c.restore();c.save();c.translate(x+3,base-26);c.rotate(-(1-recovery)*.8);rect(0,-6,17,9,recovery>.6?'#5ca451':'#a5a05e');c.restore()}
+ c.font='12px sans-serif';c.fillStyle='#573d2d';c.fillText(repaired?'Animasi dipercepat — pemulihan beransur-ansur':'Sistem bermasalah — tiada bekalan air yang normal',120,62);
+ if(i===0){rect(237,277,40,30,repaired?'#428953':'#9f5142');c.fillStyle='#fff5d9';c.fillText(repaired?'HIDUP':'MATI',238,296)}
+}
+
+// Original, royalty-free procedural music and game SFX; no third-party audio assets required.
+// User chooses language, a browser-installed voice, and speaking rate. No forced voice fallback.
+class AudioDirector {
+ constructor(getPrefs, onSpeaking, onStatus) {
+  this.getPrefs=getPrefs; this.onSpeaking=onSpeaking; this.onStatus=onStatus;
+  this.activated=false; this.ctx=null; this.musicBus=null; this.fxBus=null;
+  this.musicTimer=null; this.nextStepAt=0; this.step=0; this.ducked=false;
+  this.voiceToken=0; this.currentAudio=null; this.utterance=null; this.speaking=false;
+  this.missingRecordings=new Set(); this.lastText=''; this.lastId=''; this.voicePaused=false;this.pendingVoices=false;
+ }
+ activate() {
+  this.activated=true;
+  if(!this.ctx) {
+   try {
+    const C=window.AudioContext||window.webkitAudioContext;
+    if(C){this.ctx=new C();this.musicBus=this.ctx.createGain();this.fxBus=this.ctx.createGain();this.musicBus.connect(this.ctx.destination);this.fxBus.connect(this.ctx.destination)}
+   }catch{ /* Voice and captions remain usable without Web Audio. */ }
+  }
+  if(this.ctx){this.ctx.resume().catch(()=>{});if(!this.musicTimer){this.nextStepAt=this.ctx.currentTime+.1;this.musicTimer=setInterval(()=>this.schedule(),140)}}
+  this.sync();
+ }
+ sync(){
+  const p=this.getPrefs();
+  if(this.ctx){
+   const t=this.ctx.currentTime;
+   this.musicBus?.gain.setTargetAtTime(!p.muted&&p.musicEnabled!==false?(p.vol?.music??.15)*(this.ducked?.23:.7):0,t,.09);
+   this.fxBus?.gain.setTargetAtTime(!p.muted?(p.vol?.sfx??.5)*.7:0,t,.03);
+  }
+  if(this.currentAudio)this.currentAudio.volume=p.muted?0:(p.vol?.voice??.8);
+  if(p.muted&&this.speaking)this.stopVoice();
+ }
+ // Gentle original 32-step garden melody; musical beats are synthesized locally.
+ schedule(){
+  if(!this.ctx||this.ctx.state!=='running')return;
+  if(typeof document!=='undefined'&&document.hidden){this.nextStepAt=this.ctx.currentTime+.15;return}
+  const ctx=this.ctx;
+  if(this.nextStepAt<ctx.currentTime-.5)this.nextStepAt=ctx.currentTime+.08;
+  const eighth=60/94/2;
+  while(this.nextStepAt<ctx.currentTime+.35){
+   const i=this.step%32;
+   const melody=[72,null,76,74,72,null,69,71,72,76,79,null,76,74,72,null,69,null,72,74,76,null,74,72,71,null,69,67,69,71,72,null];
+   const bass=[48,48,53,53,57,57,55,55][Math.floor(i/4)];
+   if(i%4===0)this.note(this.midi(bass),this.nextStepAt,1.1,.13,'triangle',this.musicBus);
+   if(melody[i]!=null)this.note(this.midi(melody[i]),this.nextStepAt,.24,.12,'sine',this.musicBus);
+   if(i%8===4)this.note(this.midi(bass+12),this.nextStepAt,.55,.055,'sine',this.musicBus);
+   this.step++;this.nextStepAt+=eighth;
+  }
+ }
+ midi(n){return 440*Math.pow(2,(n-69)/12)}
+ note(freq,at,duration,level,type='sine',bus=this.fxBus){
+  if(!this.ctx||!bus)return;
+  const o=this.ctx.createOscillator(),a=this.ctx.createGain();
+  o.type=type;o.frequency.setValueAtTime(freq,at);
+  a.gain.setValueAtTime(.0001,at);
+  a.gain.exponentialRampToValueAtTime(Math.max(.001,level),at+.025);
+  a.gain.exponentialRampToValueAtTime(.0001,at+duration);
+  o.connect(a).connect(bus);o.start(at);o.stop(at+duration+.03);
+ }
+ effect(kind='click'){
+  if(this.getPrefs().muted||!this.ctx)return;
+  const now=this.ctx.currentTime+.012;
+  if(kind==='click'){this.note(620,now,.075,.12,'sine');this.note(830,now+.04,.1,.075,'triangle')}
+  if(kind==='correct'){this.note(660,now,.11,.17);this.note(880,now+.095,.19,.15)}
+  if(kind==='error'){this.note(392,now,.13,.1,'triangle');this.note(349,now+.1,.2,.08,'sine')}
+  if(kind==='reward'||kind==='success'){[660,830,990,1320].forEach((f,i)=>this.note(f,now+i*.11,.26,.22,'sine'))}
+  if(kind==='stamp'){
+   this.note(125,now,.20,.55,'triangle');
+   this.note(71,now+.025,.27,.45,'sawtooth');
+   this.note(260,now+.04,.09,.15,'square');
+   this.note(880,now+.19,.26,.13,'sine');
+  }
+ }
+ _isCurrent(token){return token===this.voiceToken}
+ _markSpeaking(v){this.speaking=v;if(!v)this.voicePaused=false;this.ducked=v;this.onSpeaking(v);this.sync()}
+ isVoicePaused(){return this.voicePaused}
+ pauseVoice(){if(!this.speaking||this.voicePaused){this.onStatus('Tiada bacaan aktif untuk dijeda.');return}try{if(this.currentAudio)this.currentAudio.pause();else window.speechSynthesis?.pause();this.voicePaused=true;this.onStatus('Suara dijeda. Klik Sambung Suara.')}catch{this.onStatus('Pelayar ini tidak menyokong jeda suara.')}}
+ resumeVoice(){if(!this.voicePaused)return;try{if(this.currentAudio)this.currentAudio.play().catch(()=>{});else window.speechSynthesis?.resume();this.voicePaused=false;this.onStatus('Suara disambung.')}catch{this.onStatus('Sila tekan Dengar Semula.')}}
+ tryPendingVoices(){if(!this.pendingVoices||!this.activated||this.getPrefs().muted||this.getPrefs().autoVoice===false)return;const voice=this.selectedVoice();if(voice&&this.lastText){this.pendingVoices=false;this.nativeSpeech(this.lastText,this.voiceToken,voice)}}
+ stopVoice(){
+  this.voiceToken++;this.pendingVoices=false;this.voicePaused=false;
+  try{window.speechSynthesis?.cancel()}catch{}
+  if(this.currentAudio){this.currentAudio.onended=null;this.currentAudio.onerror=null;this.currentAudio.pause();this.currentAudio=null}
+  this.utterance=null;
+  this._markSpeaking(false);
+ }
+ present(text,id){
+  this.lastText=String(text||'');this.lastId=id||'';
+  this.stopVoice();
+  if(this.getPrefs().muted){this.onStatus('Audio dibisukan. Sari kata masih dipaparkan.');return}
+  if(this.getPrefs().autoVoice===false){this.onStatus('Bacaan automatik dimatikan. Tekan Dengar Semula.');return}
+  if(!this.activated){this.onStatus('Tekan Mula untuk mengaktifkan suara dan muzik.');return}
+  this.speak(this.lastText,this.lastId,false);
+ }
+ // The list comes from the visitor's actual browser; Google voices cannot be invented or downloaded here.
+ availableVoices(){
+  try { return [...(window.speechSynthesis?.getVoices?.()||[])].filter(v=>v&&v.lang&&v.name); }
+  catch { return [] }
+ }
+ availableLanguages(){
+  const preferred=['id-ID','ms-MY','en-US','zh-CN'];
+  const byLang=new Map(preferred.map(x=>[x.toLowerCase(),x]));
+  for(const v of this.availableVoices())byLang.set(v.lang.replace('_','-').toLowerCase(),v.lang.replace('_','-'));
+  return [...byLang.values()].sort((a,b)=>{
+   const ia=preferred.indexOf(a),ib=preferred.indexOf(b);
+   return (ia<0?100:ia)-(ib<0?100:ib)||a.localeCompare(b);
+  });
+ }
+ voicesFor(lang){
+  const all=this.availableVoices(),l=(lang||'id-ID').replace('_','-').toLowerCase();
+  const exact=all.filter(v=>v.lang.replace('_','-').toLowerCase()===l);
+  return exact.length?exact:all.filter(v=>v.lang.replace('_','-').toLowerCase().split('-')[0]===l.split('-')[0]);
+ }
+ voiceKey(v){return [v.lang,v.voiceURI||'',v.name].join('::')}
+ selectedVoice(){
+  const p=this.getPrefs(),lang=p.voiceLanguage||'id-ID',voices=this.voicesFor(lang);
+  if(!voices.length)return null;
+  if(p.voiceId&&p.voiceId!=='auto')return voices.find(v=>this.voiceKey(v)===p.voiceId)||null;
+  const google=voices.find(v=>/google/i.test(v.name)&&/female|woman|wanita|perempuan|siti|nur|amira|yasmin|putri|indonesia/i.test(v.name));
+  return google||voices.find(v=>/google/i.test(v.name))||voices.find(v=>/female|woman|wanita|perempuan|siti|nur|amira|yasmin|putri/i.test(v.name))||voices[0];
+ }
+ voiceSummary(){
+  const p=this.getPrefs(),voice=this.selectedVoice();
+  return voice?voice.name+' ('+voice.lang+')':('Tiada suara tersedia untuk '+(p.voiceLanguage||'id-ID'));
+ }
+ speak(text=this.lastText,id=this.lastId,manual=true){
+  if(manual)this.activate();
+  this.stopVoice();
+  if(this.getPrefs().muted){this.onStatus('Audio dibisukan dalam Tetapan.');return}
+  if(!text){this.onStatus('Tiada dialog untuk dibaca.');return}
+  const voice=this.selectedVoice();
+  if(!voice){
+   this.pendingVoices=!manual&&this.availableVoices().length===0;
+   this.onStatus(this.pendingVoices?'Senarai suara sedang dimuatkan. Sari kata boleh dibaca.':'Suara pilihan tidak tersedia pada peranti ini. Buka Tetapan untuk memilih bahasa dan suara lain. Sari kata masih tersedia.');
+   return
+  }
+  this.nativeSpeech(text,this.voiceToken,voice);
+ }
+ nativeSpeech(text,token,voice){
+  const synth=window.speechSynthesis;
+  if(!synth||typeof window.SpeechSynthesisUtterance!=='function'){
+   this._markSpeaking(false);this.onStatus('Pelayar ini tidak menyokong pembacaan suara. Sari kata masih tersedia.');return
+  }
+  try{
+   const p=this.getPrefs(),u=new window.SpeechSynthesisUtterance(text);
+   u.voice=voice;u.lang=voice.lang||p.voiceLanguage||'id-ID';
+   u.rate=Math.min(1.5,Math.max(.65,Number(p.voiceRate)||1.1));
+   u.pitch=Math.min(1.3,Math.max(.8,Number(p.voicePitch)||1));u.volume=p.vol?.voice??.8;
+   this.utterance=u;
+   u.onstart=()=>{if(this._isCurrent(token)){this._markSpeaking(true);this.onStatus('Alya sedang bercakap menggunakan '+voice.name+' ('+u.lang+').')}}
+   u.onend=()=>{if(this._isCurrent(token)){this.utterance=null;this._markSpeaking(false);this.onStatus('Bacaan selesai. Tekan Dengar Semula untuk ulang.')}}
+   u.onerror=()=>{if(this._isCurrent(token)){this.utterance=null;this._markSpeaking(false);this.onStatus('Suara pilihan tidak dapat dimainkan. Cuba pilih suara lain dalam Tetapan.')}}
+   synth.speak(u);
+   this.onStatus('Memulakan '+voice.name+' ('+u.lang+')…');
+  }catch{
+   this._markSpeaking(false);this.onStatus('Suara tidak tersedia. Cuba suara lain dalam Tetapan.');
+  }
+ }
+
+}
+
 const colors={grass:'#9dbd75',dark:'#335e48',leaf:'#54885a'};
 function renderer(canvas){const c=canvas.getContext('2d');c.imageSmoothingEnabled=false;const rect=(x,y,w,h,col)=>{c.fillStyle=col;c.fillRect(Math.round(x),Math.round(y),w,h)};const poly=(pts,col)=>{c.fillStyle=col;c.beginPath();pts.forEach(([x,y],i)=>i?c.lineTo(x,y):c.moveTo(x,y));c.closePath();c.fill()};
 function tree(x,y,s=1){c.save();c.translate(x,y);c.scale(s,s);rect(-13,9,34,8,'#12974f');rect(-3,-4,7,23,'#8d5137');rect(-17,-26,33,27,'#22583d');rect(-23,-20,42,16,'#078c47');rect(-15,-32,26,26,'#20ad50');rect(-12,-29,14,5,'#68c651');rect(5,-16,9,4,'#a0d65c');c.restore()}
@@ -128,62 +936,355 @@ if(Math.floor(t*2)%11===0){rect(-3,-8,2,2,palette.s);rect(1,-8,2,2,palette.s);re
 rect(-1,-4,2,pose==='talk'&&Math.floor(t*5)%2?2:1,pose==='talk'?'#9d4d42':'#d98070');
 if(pose==='stamp'){const sy=Math.sin(t*5)>0?1:5;rect(5,sy,5,2,palette.s);rect(9,sy-3,3,4,'#815334');rect(8,sy+1,5,2,'#42312b')}if(pose==='wave'){rect(-7,0,2,5,palette.y);rect(-9,-3,2,6,palette.s);rect(-9,-4,3,2,palette.s)}
 c.restore()}
-function city(t){rect(0,0,640,360,'#68bfd0');for(let i=0;i<12;i++){let x=i*61;rect(x,12+(i%3)*10,48,65,'#458ca2');for(let j=0;j<4;j++)rect(x+8+j*9,30,4,12,'#a4d4ca')}rect(0,80,640,280,'#16bd60');rect(0,202,640,43,'#efb34f');rect(290,100,43,260,'#efb34f');rect(0,205,640,3,'#f9cb70');rect(294,100,3,260,'#f9cb70');for(let i=0;i<125;i++){let x=(i*173)%640,y=90+(i*97)%270;if((y<198||y>248)&&(x<285||x>336)){rect(x,y,3,2,i%4?'#0eac57':'#e9d496');if(i%7===0)rect(x+2,y-2,2,3,'#f6e6ab')}}house(70,115,100,70,'#d6ad76','#377dab');for(let i=0;i<3;i++){rect(77+i*29,146,23,3,'#8b8a67');plant(87+i*29,138,.6)}house(375,135,91,55,'#e8bd79','#258e94');house(480,138,72,52,'#c79570','#b64f39');house(395,282,133,62,'#e5bb77','#3a80ad');rect(410,280,103,19,'#a3d6d0');rect(460,276,3,25,'#f6edc8');for(let row=0;row<3;row++){rect(75,273+row*22,125,16,'#945431');for(let k=0;k<7;k++)plant(85+k*17,272+row*22,.6)}for(const [x,y,s] of [[35,130,1.4],[220,142,1.2],[590,170,1.5],[238,304,1],[30,321,1.3],[567,313,1.3],[347,85,.8],[180,85,.8]])tree(x,y,s);for(let x=30;x<640;x+=120){rect(x,231,14,3,'#bfac88')}alya(312,222,t,1.1,'wave');rect(265,257,25,6,'#957956');rect(268,263,3,10,'#795e48');rect(284,263,3,10,'#795e48');for(let i=0;i<5;i++){let x=(t*9+i*133)%640;rect(x,65+Math.sin(t+i)*4,3,2,'#fff4c9')}}
-function interior(id,t){rect(0,0,640,360,'#e8b76d');rect(0,0,640,225,'#f0e5c2');for(let x=0;x<640;x+=32)rect(x,225,1,135,'#c28a4c');for(let y=240;y<360;y+=24)rect(0,y,640,1,'#c28a4c');rect(45,35,240,145,'#81aaa1');rect(52,42,226,130,'#b6d7be');for(let i=0;i<5;i++)house(60+i*44,110,33,60,'#a7c2ae','#86aa9d');rect(160,40,7,140,'#f9f0cf');rect(45,120,240,6,'#f9f0cf');rect(0,213,640,10,'#8d9570');if(id==='lab'){rect(340,40,220,100,'#567b65');rect(350,50,200,80,'#74967b');rect(80,235,185,30,'#b2956b');rect(360,235,185,30,'#b2956b');for(let x of [100,380]){rect(x,180,140,54,'#709e9b');rect(x+4,190,132,40,'#8fcbd1');for(let a=0;a<3;a++)plant(x+25+a*40,179,1)}}else{for(let j=0;j<2;j++){rect(350,135+j*70,200,8,'#9d7955');for(let i=0;i<4;i++)plant(375+i*48,113+j*70,1.7)}rect(70,250,180,30,'#a88a62');for(let i=0;i<4;i++)plant(94+i*43,228,1.8)}alya(310,300,t,2,'talk');tree(585,290,1.7)}
+function city(t){rect(0,0,640,360,'#68bfd0');for(let i=0;i<12;i++){let x=i*61;rect(x,12+(i%3)*10,48,65,'#458ca2');for(let j=0;j<4;j++)rect(x+8+j*9,30,4,12,'#a4d4ca')}rect(0,80,640,280,'#16bd60');rect(0,202,640,43,'#efb34f');rect(290,100,43,260,'#efb34f');rect(0,205,640,3,'#f9cb70');rect(294,100,3,260,'#f9cb70');for(let i=0;i<125;i++){let x=(i*173)%640,y=90+(i*97)%270;if((y<198||y>248)&&(x<285||x>336)){rect(x,y,3,2,i%4?'#0eac57':'#e9d496');if(i%7===0)rect(x+2,y-2,2,3,'#f6e6ab')}}house(70,115,100,70,'#d6ad76','#377dab');for(let i=0;i<3;i++){rect(77+i*29,146,23,3,'#8b8a67');plant(87+i*29,138,.6)}house(375,135,91,55,'#e8bd79','#258e94');house(480,138,72,52,'#c79570','#b64f39');house(395,282,133,62,'#e5bb77','#3a80ad');rect(410,280,103,19,'#a3d6d0');rect(460,276,3,25,'#f6edc8');for(let row=0;row<3;row++){rect(75,273+row*22,125,16,'#945431');for(let k=0;k<7;k++)plant(85+k*17,272+row*22,.6)}for(const [x,y,s] of [[35,130,1.4],[220,142,1.2],[590,170,1.5],[238,304,1],[30,321,1.3],[567,313,1.3],[347,85,.8],[180,85,.8]])tree(x,y,s);for(let x=30;x<640;x+=120){rect(x,231,14,3,'#bfac88')}alya(312,222,t,1.1,'wave');rect(265,257,25,6,'#957956');rect(268,263,3,10,'#795e48');rect(284,263,3,10,'#795e48');for(let i=0;i<5;i++){let x=(t*9+i*133)%640;rect(x,65+Math.sin(t+i)*4,3,2,'#fff4c9')}
+ // Quiet scenery motion remains behind all interactive hotspot and Alya sprites.
+ for(let i=0;i<6;i++){let x=(i*131+Math.sin(t*.55+i*2)*13+640)%640,y=100+(i*43)%85;rect(x,y,3,2,'#fff2bc');rect(x+4,y-2,3,2,'#fff2bc')}
+ // Small urban greenery details. Original character drawing stays exactly the same.
+ for(let i=0;i<7;i++){let x=30+i*91,y=339+(i%3)*3;rect(x,y,4,3,'#d6bd7d');rect(x-3,y-5,3,4,'#e4dfa8');rect(x+4,y-7,3,4,'#f8edc6')}
+ for(const [x,y] of [[240,173],[556,257],[360,215]]){rect(x,y+10,24,4,'#278a4e');rect(x+4,y,15,12,'#238f50');rect(x+7,y-8,11,10,'#63b960');rect(x+12,y-12,5,6,'#b1d277')}
+ }
+function interior(id,t){rect(0,0,640,360,'#e8b76d');rect(0,0,640,225,'#f0e5c2');for(let x=0;x<640;x+=32)rect(x,225,1,135,'#c28a4c');for(let y=240;y<360;y+=24)rect(0,y,640,1,'#c28a4c');rect(45,35,240,145,'#81aaa1');rect(52,42,226,130,'#b6d7be');for(let i=0;i<5;i++)house(60+i*44,110,33,60,'#a7c2ae','#86aa9d');rect(160,40,7,140,'#f9f0cf');rect(45,120,240,6,'#f9f0cf');rect(0,213,640,10,'#8d9570');if(id==='lab'){rect(340,40,220,100,'#567b65');rect(350,50,200,80,'#74967b');rect(80,235,185,30,'#b2956b');rect(360,235,185,30,'#b2956b');for(let x of [100,380]){rect(x,180,140,54,'#709e9b');rect(x+4,190,132,40,'#8fcbd1');for(let a=0;a<3;a++)plant(x+25+a*40,179,1)}}else{for(let j=0;j<2;j++){rect(350,135+j*70,200,8,'#9d7955');for(let i=0;i<4;i++)plant(375+i*48,113+j*70,1.7)}rect(70,250,180,30,'#a88a62');for(let i=0;i<4;i++)plant(94+i*43,228,1.8)}
+/* Distinct exploration environments; Alya's pixels, outfit and proportions remain untouched. */
+if(id==='pangsa'){
+ rect(0,0,640,360,'#e8d5ac');rect(45,0,550,220,'#83cdd5');
+ for(let i=0;i<9;i++){const x=64+i*62,y=55+i%3*17;rect(x,y,42,170,'#648ba2');for(let j=0;j<4;j++)rect(x+8+(j%2)*16,y+20+j*27,10,14,'#dbeacb')}
+ rect(0,215,640,145,'#d9b889');for(let x=0;x<640;x+=40)rect(x,215,2,145,'#bd956c');
+ for(let y=240;y<360;y+=36)rect(0,y,640,2,'#c19c73');
+ rect(0,162,640,9,'#fff0cc');for(let x=35;x<640;x+=64)rect(x,170,8,75,'#f6e7c8');rect(0,245,640,13,'#a67b57');
+ for(let x of [92,161,488,552]){rect(x-19,207,40,16,'#9e6149');rect(x-14,222,31,13,'#c17e59');plant(x,197,1.65)}
+ rect(352,203,90,8,'#91745a');rect(355,212,7,46,'#91745a');rect(433,212,7,46,'#91745a');
+}
+if(id==='teres'){
+ rect(0,0,640,360,'#a2d8d1');rect(0,190,640,170,'#9dc17d');rect(0,258,640,102,'#c7ae7c');
+ for(let y=282;y<360;y+=35)rect(0,y,640,2,'#af945e');
+ rect(0,22,222,242,'#e4c394');rect(0,22,230,13,'#c76c4d');rect(27,65,108,92,'#718b8a');rect(38,76,86,70,'#aad2c0');rect(147,157,54,107,'#956e54');
+ rect(297,58,13,193,'#806b4e');rect(516,58,13,193,'#806b4e');
+ for(let y of [90,157,224]){rect(281,y,260,10,'#a77d55');for(let x of [316,381,446,507])plant(x,y-10,1.45)}
+ for(let x of [260,580]){rect(x-12,225,25,18,'#c4895c');plant(x,217,1.5)}
+ for(let x of [97,183]){rect(x,260,5,52,'#856849');rect(x+34,260,5,52,'#856849');rect(x,260,39,6,'#856849');plant(x+18,252,1.1)}
+}
+if(id==='kebun'){
+ rect(0,0,640,360,'#8cced7');for(let i=0;i<11;i++){const x=i*58;rect(x,78+(i%3)*9,43,83,'#6d9da5');for(let k=0;k<3;k++)rect(x+8+k*10,94,6,9,'#dbe9c4')}
+ rect(0,165,640,195,'#86b36f');for(let x=0;x<640;x+=32){rect(x,172,5,3,'#9fc27e');rect(x+12,214,4,3,'#9fc27e')}
+ rect(0,160,640,7,'#d6b888');for(let x=18;x<640;x+=48)rect(x,149,6,71,'#c4a875');rect(0,196,640,7,'#ddc28d');
+ for(let y of [224,275,326]){for(let x of [52,352]){rect(x,y,230,30,'#8a5d3f');rect(x,y,230,7,'#b58d57');for(let k=0;k<8;k++)plant(x+16+k*28,y-4,0.85)}}
+ rect(530,238,66,48,'#b78c58');rect(534,233,58,8,'#795f42');rect(539,247,48,6,'#8d6a4a');rect(544,259,41,6,'#8d6a4a');rect(550,272,30,6,'#8d6a4a');
+ rect(18,78,201,48,'#f6e5bd');rect(24,83,189,36,'#437654');c.fillStyle='#fff3cf';c.font='bold 16px sans-serif';c.fillText('KEBUN KOMUNITI',36,107);
+}
+// Subtle themed scenery; do not change Alya's existing pixels/scale/pose.
+ if(id==='pangsa'){
+  // Visible balcony pots and droplets convey practical growing in a small urban space.
+  for(let x of [90,159,486,550]){rect(x-19,230,37,4,'#bfdfb4');rect(x+10,214+Math.sin(t*1.6+x)*2,2,4,'#a7def1')}
+  rect(36,14,183,27,'#f9ecc2');c.fillStyle='#3b765a';c.font='bold 14px sans-serif';c.fillText('BALKONI HIJAU',48,32);
+ }else if(id==='teres'){
+  for(let i=0;i<4;i++){let x=322+i*64;rect(x,84+Math.sin(t*1.5+i)*2,3,3,'#e5cf6c')}
+  rect(31,16,197,28,'#f6e8c1');c.fillStyle='#53734f';c.font='bold 14px sans-serif';c.fillText('TANAMAN BERTINGKAT',39,34);
+ }else if(id==='kebun'){
+  for(let i=0;i<6;i++){const x=45+i*108+Math.sin(t+i)*4,y=185+Math.cos(t*.9+i)*7;rect(x,y,3,4,'#fff2aa');rect(x-4,y-2,4,2,'#fff2aa')}
+ }else if(id==='lab'){
+  rect(354,58,188,29,'#284c49');c.fillStyle='#e9f6ce';c.font='bold 15px sans-serif';c.fillText('MAKMAL TAKUNGAN',365,77);
+  rect(360,93,5,5,Math.sin(t*2)>0?'#ade5a1':'#547960');
+ }
+ alya(310,300,t,2,'talk');tree(585,290,1.7)}
 function simulation(id,t){rect(0,0,640,360,'#f3edd5');for(let x=0;x<640;x+=20)rect(x,0,1,360,'#e7e3ca');for(let y=0;y<360;y+=20)rect(0,y,640,1,'#e7e3ca');if(id===0){rect(135,150,370,155,'#628d85');rect(144,161,352,135,'#bfded6');rect(144,192,352,104,'#6ebacb');rect(128,148,384,10,'#57786b');for(let x of [210,320,430]){plant(x,132,1.8);rect(x-15,148,30,24,'#96775b');for(let k=0;k<5;k++){rect(x-10+k*5,172,2,40+k%2*16,'#f2e1ad');rect(x-9+k*5,198+k%2*16,8,2,'#f2e1ad')}}}else{rect(160,130,340,58,'#628c83');rect(168,139,324,41,'#73bace');rect(215,252,250,63,'#61887f');rect(223,260,234,48,'#70b8ca');rect(240,280,32,24,'#496e68');rect(112,120,14,172,'#7caaa4');rect(112,120,57,14,'#7caaa4');rect(112,280,140,12,'#7caaa4');rect(480,180,13,90,'#7caaa4');rect(450,258,43,12,'#7caaa4');for(let x of [225,330,435]){plant(x,115,1.7);rect(x-13,130,26,18,'#947355');for(let k=0;k<4;k++)rect(x-8+k*5,148,2,22,'#eee0b0')}const pts=[[250,286],[119,286],[119,127],[166,127],[174,160],[486,160],[486,264],[450,264],[250,286]];let lens=[],total=0;for(let i=1;i<pts.length;i++){let d=Math.hypot(pts[i][0]-pts[i-1][0],pts[i][1]-pts[i-1][1]);lens.push(d);total+=d}for(let n=0;n<15;n++){let d=(t*55+n*total/15)%total;for(let i=0;i<lens.length;i++){if(d<lens[i]){let a=pts[i],b=pts[i+1],f=d/lens[i];rect(a[0]+(b[0]-a[0])*f-2,a[1]+(b[1]-a[1])*f-2,5,5,'#e4ffff');break}d-=lens[i]}}}c.fillStyle='#41624e';c.font='12px sans-serif';c.fillText(id?'Pam → palung tanaman → tangki nutrien':'Larutan statik • akar menyerap air dan nutrien',165,335)}
 return {draw(scene,t){if(scene==='home'||scene==='map')city(t);else if(scene.startsWith('sim'))simulation(Number(scene.at(-1)),t);else interior(scene,t)},alya,clear(){c.clearRect(0,0,canvas.width,canvas.height)}}}
 
 const $=s=>document.querySelector(s);
-let profiles={kendiri:freshProgress(),kelas:freshProgress('kelas')},mode='kendiri',storageOK=true;
-try{({profiles,mode}=loadProfiles(localStorage))}catch{storageOK=false}
+let profiles={kendiri:freshProgress(),kelas:freshProgress('kelas')},mode='kendiri',storageOK=true,storageWarning='';
+try{const loaded=loadProfiles(localStorage);({profiles,mode}=loaded);storageWarning=loaded.warning||''}catch{storageOK=false;storageWarning='Simpanan tidak dapat dibaca. Eksport rekod jika perlu.'}
 let state=profiles[mode],hands=null,assemblyUI=null,flowCompleted=false;
-let scene='home',paused=false,simTime=0,last=0,speech='',speechID='',talking=false,audio,musicGain,ctx,review=false;
+let scene='home',paused=false,simTime=0,last=0,speech='',speechID='',talking=false,review=false;
+const sound=new AudioDirector(()=>state,playing=>{talking=playing;$('#dialogue').classList.toggle('speaking',playing)},message=>{$('#voiceStatus').textContent=message;$('#transcriptStatus').textContent=message;if($('#voicePreviewStatus'))$('#voicePreviewStatus').textContent=message});
+document.addEventListener('pointerdown',()=>sound.activate(),{passive:true});
+document.addEventListener('click',event=>{if(event.isTrusted&&event.target?.closest?.('button'))sound.effect('click')},true);
+document.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' ')sound.activate()});
 const art=renderer($('#world')),portrait=renderer($('#portrait'));
+const phase3=createPhase3({$,btn,spot,say,save,go,modal,esc,toast,award,answerForm,state:()=>state,time:()=>simTime,missionMenu,book,effect:kind=>sound.effect(kind)});
+function releaseCameraForPrivacy(){
+ if(!hands)return;
+ hands.stop();hands=null;assemblyUI?.hide();
+ const video=$('#camera'),panel=$('#cameraPanel');
+ video.hidden=true;$('#cameraPlaceholder').hidden=false;
+ $('#cameraIndicator').textContent='Kamera dimatikan';
+ if(panel&&!panel.hidden)$('#cameraStatus').textContent='Kamera dihentikan apabila halaman tidak aktif. Tekan Cuba Semula Kamera untuk mengaktifkan lagi.';
+}
+document.addEventListener('visibilitychange',()=>{if(document.hidden)releaseCameraForPrivacy()});
+window.addEventListener('pagehide',releaseCameraForPrivacy);
 function save(){profiles[state.mode]=state;try{localStorage.setItem('misi-bandar-v2',JSON.stringify({mode:state.mode,profiles}))}catch{storageOK=false;toast('Simpanan tidak tersedia. Eksport rekod sebelum keluar.')}}
-function newGame(){const begin=()=>{const m=state.mode;state=freshProgress(m);state.started=true;profiles[m]=state;review=false;save();$('#modal').close();music();go('map')};if(state.started||state.answers.length||state.badges.length){modal('<h2>Mulakan permainan baharu?</h2><p>Hanya kemajuan mod ini akan dipadam. Eksport rekod melalui Buku Misi jika perlu. Mod lain tidak berubah.</p><button id="confirmNew">Ya, mula baharu</button><button id="cancelNew">Batal</button>');$('#confirmNew').onclick=begin;$('#cancelNew').onclick=()=>$('#modal').close()}else begin()}
+function newGame(){const begin=()=>{const m=state.mode,previous=state;state=freshProgress(m);Object.assign(state,{vol:{...previous.vol},muted:previous.muted,autoVoice:previous.autoVoice,musicEnabled:previous.musicEnabled,voiceLanguage:previous.voiceLanguage||'id-ID',voiceId:previous.voiceId||'auto',voiceRate:previous.voiceRate||1.1,voicePitch:previous.voicePitch||1});state.started=true;profiles[m]=state;review=false;save();$('#modal').close();music();go('map')};if(state.started||state.answers.length||state.badges.length){modal('<h2>Mulakan permainan baharu?</h2><p>Hanya kemajuan mod ini akan dipadam. Eksport rekod melalui Buku Misi jika perlu. Mod lain tidak berubah.</p><button id="confirmNew">Ya, mula baharu</button><button id="cancelNew">Batal</button>');$('#confirmNew').onclick=begin;$('#cancelNew').onclick=()=>$('#modal').close()}else begin()}
 function toast(s){$('#toast').textContent=s;$('#toast').style.display='block';clearTimeout(toast.timer);toast.timer=setTimeout(()=>$('#toast').style.display='none',3500)}
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-function btn(text,fn,parent='#controls',cls=''){const b=document.createElement('button');b.textContent=text;b.className=cls;b.onclick=()=>{tone();fn()};$(parent).append(b);return b}
+function btn(text,fn,parent='#controls',cls=''){const b=document.createElement('button');b.textContent=text;b.className=cls;b.onclick=fn;$(parent).append(b);return b}
 function spot(text,x,y,fn){const b=btn(text,fn,'#spots','spot');b.style.left=x+'%';b.style.top=y+'%'}
 function modal(html){$('#modalBody').innerHTML=html;if(!$('#modal').open)$('#modal').showModal()}
-function stopVoice(){window.speechSynthesis?.cancel();if(audio){audio.pause();audio=null}talking=false;if(musicGain)musicGain.gain.value=state.muted?0:state.vol.music*.08}
-function say(text,id=''){stopVoice();speech=text;speechID=id;$('#speech').textContent=text;$('#voiceStatus').textContent='Sari kata penuh tersedia.'}
-function speak(){stopVoice();if(state.muted){toast('Audio dibisukan dalam Tetapan.');return}const voice=window.speechSynthesis?.getVoices().find(v=>/^ms[-_]MY$/i.test(v.lang));const fail=()=>{$('#voiceStatus').textContent='Rakaman ms-MY belum tersedia. Sila baca sari kata.';stopVoice()};talking=true;if(musicGain)musicGain.gain.value=state.vol.music*.02;if(voice){const u=new SpeechSynthesisUtterance(speech);u.voice=voice;u.lang='ms-MY';u.volume=state.vol.voice;u.onend=stopVoice;u.onerror=fail;speechSynthesis.speak(u);$('#voiceStatus').textContent='Suara ms-MY peranti; rakaman wanita disyorkan.'}else if(speechID){audio=new Audio('assets/audio/'+speechID+'.mp3');audio.volume=state.vol.voice;audio.onended=stopVoice;audio.onerror=fail;audio.play().catch(fail)}else fail()}
-function tone(freq=620){if(state.muted)return;try{ctx??=new AudioContext();ctx.resume();const o=ctx.createOscillator(),g=ctx.createGain();o.type='sine';o.frequency.value=freq;g.gain.setValueAtTime(state.vol.sfx*.08,ctx.currentTime);g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+.15);o.connect(g).connect(ctx.destination);o.start();o.stop(ctx.currentTime+.16)}catch{}}
-function music(){try{ctx??=new AudioContext();ctx.resume();if(musicGain)return;musicGain=ctx.createGain();musicGain.gain.value=state.muted?0:state.vol.music*.08;musicGain.connect(ctx.destination);[261.63,329.63,392].forEach(f=>{const o=ctx.createOscillator();o.type='sine';o.frequency.value=f;o.connect(musicGain);o.start()})}catch{}}
+function stopVoice(){sound.stopVoice()}
+function say(text,id=''){speech=text;speechID=id;$('#speech').textContent=text;$('#transcriptText').textContent=text;sound.present(text,id)}
+function collapseDialogue(){const b=$('#dialogToggle');$('#dialogue').classList.remove('expanded');$('#transcriptPause').textContent='Jeda Suara';$('#dialogueTranscript').hidden=true;b.setAttribute('aria-expanded','false');b.textContent='Lihat lagi';b.title='Baca dialog penuh Alya di ruang aktiviti'}
+function speak(){sound.speak(speech,speechID,true)}
+function music(){sound.activate()}
 function unlock(id){if(!state.notes.includes(id))state.notes.push(id);save()}
-function go(next){$('#assemblyBoard')?.remove();hands?.stop();hands=null;assemblyUI=null;$('#activity').replaceChildren();stopVoice();scene=next;paused=false;simTime=0;if(next!=='home'&&!review){state.scene=next;state.started=true;save()}$('#spots').replaceChildren();$('#controls').replaceChildren();$('#title').innerHTML='';$('#objective').textContent='';$('#status').textContent=`${state.mode==='kelas'?'Mod Kelas':'Mod Kendiri'} · ${state.badges.length}/5 lencana`;
-if(next==='home'){review=false;$('#title').innerHTML='<span class="eyebrow">PENGEMBARAAN RBT • TAHUN 5</span><h1>Misi Pertanian<br>Bandar</h1><p>Jelajah Sistem Penanaman Secara Takungan</p>';$('#objective').textContent='Selamat datang ke Bandar Hijau · Fasa 2';say('Hai, saya Alya! Ruang rumah kita kecil, tetapi impian kebun kita besar. Mari bantu jiran meneroka pertanian bandar.','intro');btn('Mula Permainan Baharu',newGame,'#controls','primary');btn('Sambung Permainan',()=>{music();review=false;go(state.scene||'map')}).disabled=!state.started;btn('Pilih Misi / Main Semula',missionMenu);btn('Buku Misi Pertanian',book);btn('Mod Ulang Kaji',()=>{review=true;go('lab')});btn('Tetapan',settings)}
+function go(next){collapseDialogue();if(next==='ending'&&![1,2,3,4,5].every(n=>state.badges.includes(n))){toast('Lengkapkan kelima-lima misi sebelum menamatkan permainan.');return}const required=/^repair[01]$/.test(next)||next==='gate4'?3:/^final[0-2]$/.test(next)?4:next==='ending'?5:0;if(required&&state.mode!=='kelas'&&!state.badges.includes(required)){toast('Selesaikan misi sebelumnya dahulu.');return}$('#assemblyBoard')?.remove();hands?.stop();hands=null;assemblyUI=null;$('#cameraPanel').hidden=true;$('#playWorkspace').classList.remove('camera-active');$('#camera').hidden=true;$('#cameraPlaceholder').hidden=false;$('#cameraControls').replaceChildren();$('#cameraIndicator').textContent='Kamera dimatikan';$('#activity').replaceChildren();stopVoice();scene=next;paused=false;simTime=0;if(next!=='home'&&!review){state.scene=next;state.started=true;save()}$('#spots').replaceChildren();$('#controls').replaceChildren();$('#title').innerHTML='';$('#objective').textContent='';$('#status').textContent=`${state.mode==='kelas'?'Mod Kelas':'Mod Kendiri'} · ${state.badges.length}/5 lencana`;
+if(next==='home'){review=false;$('#title').innerHTML='<span class="eyebrow">PENGEMBARAAN RBT • TAHUN 5</span><h1>Misi Pertanian<br>Bandar</h1><p>Jelajah Sistem Penanaman Secara Takungan</p>';$('#objective').textContent='Selamat datang ke Bandar Hijau · Fasa 3';say('Hai, saya Alya! Ruang rumah kita kecil, tetapi impian kebun kita besar. Mari bantu jiran meneroka pertanian bandar.','intro');btn('Mula Permainan Baharu',newGame,'#controls','primary');btn('Sambung Permainan',()=>{music();review=false;go(state.scene||'map')}).disabled=!state.started;btn('Pilih Misi / Main Semula',missionMenu);btn('Buku Misi Pertanian',book);btn('Mod Ulang Kaji',()=>{review=true;go('lab')});btn('Tetapan',settings)}
 else if(next==='map'){say('Jiran kita mahu menanam sayur, tetapi ruang rumah terhad. Terokai tiga tempat dan periksa dua objek di setiap tempat. Kemudian ceritakan penemuan kamu.','map');$('#objective').textContent=`Misi 1 · Misteri Pertanian Bandar · ${places.filter(p=>p.items.every((_,i)=>state.visited.includes(p.id+i))).length}/3 tempat diterokai`;spot('Rumah Pangsa',19,49,()=>go('pangsa'));spot('Rumah Teres',73,51,()=>go('teres'));spot('Kebun Komuniti',22,91,()=>go('kebun'));spot(state.badges.length?'Pusat Teknologi':'Pusat Teknologi · terkunci',72,91,()=>state.badges.length||state.mode==='kelas'?go('lab'):toast('Lengkapkan Misi 1 untuk membuka pusat teknologi.'));btn('Catat Penemuan',answer1,'#controls','primary');btn('Petunjuk',()=>{state.hints.push({mission:1,time:Date.now()});save();say(definition+' Contohnya, sawi ditanam dalam pasu di balkoni rumah pangsa.','definition')});btn('Pilih Misi',missionMenu)}
 else if(places.some(p=>p.id===next)){const p=places.find(p=>p.id===next);say(`${p.npc}: ${p.text}`,p.id);$('#objective').textContent='Misi 1 · '+p.topic;for(let i=0;i<2;i++)spot((state.visited.includes(p.id+i)?'✓ ':'')+p.items[i][0],i?71:25,i?49:73,()=>{if(!state.visited.includes(p.id+i))state.visited.push(p.id+i);unlock(p.id);go(p.id);say(`${p.npc}: ${p.items[i][1]}`,p.id+'-'+i)});btn('Kembali ke Bandar',()=>go('map'),'#controls','primary')}
-else if(next==='lab'){say('Selamat datang ke Pusat Teknologi Pertanian! Periksa komponen empat sistem takungan. Bandingkan larutan yang statik dengan larutan yang dikitar semula.','lab');$('#objective').textContent='Misi 2 · Rahsia Sistem Takungan · Empat stesen interaktif';spot('Tanpa kitaran semula',27,76,()=>go('sim0'));spot('Dengan kitaran semula',72,76,()=>go('sim1'));spot('Akuaponik',25,40,()=>go('sim2'));spot('Bekas Pengairan Kendiri',72,40,()=>go('sim3'));btn('Makmal Tani Pintar',()=>go('workshop')).disabled=!state.badges.includes(2)&&state.mode!=='kelas';btn('Bandingkan Sistem',compare);btn('Jelaskan Dua Sistem',answer2);btn('Kembali ke Bandar',()=>{review=false;go('map')})}
-else if(/^sim[0-3]$/.test(next)){const i=Number(next.at(-1)),s=systems[i];say(s.text,'system-'+i);$('#objective').textContent=s.name;const coords=[[[34,58],[67,37],[49,43],[68,76]],[[39,83],[18,52],[52,30],[77,62]],[[43,75],[20,46],[28,85],[65,27]],[[28,32],[72,32],[50,45],[50,65],[50,82],[84,64]]][i];s.parts.forEach((part,j)=>{const b=btn((state.inspected[i].includes(j)?'✓ ':'')+part[0],()=>{if(!review&&!state.inspected[i].includes(j))state.inspected[i].push(j);if(!review)unlock('system'+i);save();say(part[1],`system-${i}-${j}`);b.textContent='✓ '+part[0]},'#activity');b.dataset.component=j;});btn('Jeda',e=>{paused=!paused;$('#controls button').textContent=paused?'Mainkan':'Jeda'});btn('Ulang Animasi',()=>{simTime=0;paused=false;$('#controls button').textContent='Jeda'});btn('Bandingkan Sistem',compare);btn('Kembali ke Pusat',()=>go('lab'))}
+else if(next==='lab'){say('Selamat datang ke Pusat Teknologi Pertanian! Periksa komponen empat sistem takungan. Bandingkan larutan yang statik dengan larutan yang dikitar semula.','lab');$('#objective').textContent='Misi 2 · Rahsia Sistem Takungan · Empat stesen interaktif';spot('Tanpa kitaran semula',27,76,()=>go('sim0'));spot('Dengan kitaran semula',72,76,()=>go('sim1'));spot('Akuaponik',25,40,()=>go('sim2'));spot('Bekas Pengairan Kendiri',72,40,()=>go('sim3'));btn('Makmal Tani Pintar',()=>go('workshop')).disabled=review||(!state.badges.includes(2)&&state.mode!=='kelas');btn('Bandingkan Sistem',compare);btn('Jelaskan Dua Sistem',answer2);btn(review?'Kembali ke Skrin Utama':'Kembali ke Bandar',()=>go(review?'home':'map'))}
+else if(/^sim[0-3]$/.test(next)){const i=Number(next.at(-1)),s=systems[i];say(s.text,'system-'+i);$('#objective').textContent=s.name;const guide=document.createElement('section');guide.id='scienceGuide';guide.className='science-guide';guide.innerHTML='<h3>Ikuti Aliran Sistem</h3><div class="science-dots">'+learningStages[i].map((_,j)=>'<span data-guide-dot="'+j+'" aria-label="Langkah '+(j+1)+'">'+(j+1)+'</span>').join('')+'</div><article data-active-stage="-1" aria-live="off"></article><p class="science-disclaimer">Rajah animasi menunjukkan arah aliran, bukan skala atau masa sebenar.</p><div class="science-navigation"><button type="button" id="sciencePrev">◀ Sebelum</button><button type="button" id="scienceNext">Seterusnya ▶</button></div>';$('#activity').append(guide);const jump=dir=>{const n=learningStages[i].length;const to=(stageIndex(i,simTime)+dir+n)%n;simTime=to*3+.05;paused=false;const pause=$('#controls button');if(pause&&pause.textContent==='Mainkan')pause.textContent='Jeda'};$('#sciencePrev').onclick=()=>jump(-1);$('#scienceNext').onclick=()=>jump(1);const coords=[[[34,58],[67,37],[49,43],[68,76]],[[39,83],[18,52],[52,30],[77,62]],[[43,75],[20,46],[28,85],[65,27]],[[28,32],[72,32],[50,45],[50,65],[50,82],[84,64]]][i];s.parts.forEach((part,j)=>{const b=btn((state.inspected[i].includes(j)?'✓ ':'')+part[0],()=>{if(!review&&!state.inspected[i].includes(j))state.inspected[i].push(j);if(!review)unlock('system'+i);save();say(part[1],`system-${i}-${j}`);b.textContent='✓ '+part[0]},'#activity');b.dataset.component=j;const h=btn(String(j+1),()=>b.click(),'#spots','spot part-hotspot');h.style.left=coords[j][0]+'%';h.style.top=coords[j][1]+'%';h.title=part[0];h.setAttribute('aria-label',part[0]);});btn('Jeda',e=>{paused=!paused;$('#controls button').textContent=paused?'Mainkan':'Jeda'});btn('Ulang Animasi',()=>{simTime=0;paused=false;$('#controls button').textContent='Jeda'});btn('Bandingkan Sistem',compare);btn('Kembali ke Pusat',()=>go('lab'))}
 else if(next==='workshop')workshop();
 else if(next==='flow')flowScene();
-else if(next==='gate4'){say('Misi 4 — Operasi Selamatkan Tanaman telah dibuka. Permainan misi ini akan dibangunkan dalam fasa seterusnya.');$('#objective').textContent='Misi 4 · Pintu masuk dibuka';btn('Main Semula Misi',missionMenu);btn('Kembali ke Bandar',()=>go('map'))}}
+else if(next==='gate4')phase3.centre();
+else if(/^repair[01]$/.test(next))phase3.repair(Number(next.at(-1)));
+else if(/^final[0-2]$/.test(next))phase3.finalScene(Number(next.at(-1)));
+else if(next==='ending')phase3.ending();}
+
 function answer1(){if(state.visited.length<6){toast('Periksa dua objek di setiap tiga tempat dahulu.');return}if(!state.summarySeen){say('Kamu telah melihat pasu di balkoni, tanaman bertingkat dan kebun komuniti. Apakah persamaannya? Semuanya menghasilkan makanan dengan menggunakan ruang yang ada. '+definition,'definition');modal('<h2>Rumuskan bersama Alya</h2><p>'+definition+'</p><p>Ingat pemerhatian kamu: sawi di balkoni, susunan menegak di rumah teres, dan kebun komuniti di bandar. Bincangkan persamaan aktiviti ini sebelum menulis penerangan sendiri.</p><button id="understood">Saya sudah membuat rumusan</button>');$('#understood').onclick=()=>{state.summarySeen=true;unlock('definition');$('#modal').close();answer1()};return}answerForm('misi1','Terangkan maksud pertanian bandar dan berikan sekurang-kurangnya satu contoh yang sesuai.',()=>award(1,'lab'))}
 function answerForm(id,prompt,done){const previous=state.answers.filter(a=>a.id===id).at(-1);modal(`<h2>Catatan Peneroka</h2><p>${prompt}</p>${state.mode==='kelas'?'<p>Guru: gunakan Lembaran Respons Individu. Catatan komputer ini ialah rekod perbincangan kelas sahaja.</p>':''}<label>Jawapan kamu<textarea id="answer" maxlength="5000">${esc(state.drafts[id]??previous?.text??'')}</textarea></label><p>Jawapan terbuka disimpan untuk pertimbangan guru. Lencana menunjukkan aktiviti selesai, bukan Tahap Penguasaan.</p><p id="answerError" role="alert"></p><button id="submitAnswer">Simpan Catatan</button>`);$('#answer').oninput=()=>{state.drafts[id]=$('#answer').value;save()};let submitted=false;$('#submitAnswer').onclick=()=>{if(submitted)return;const text=$('#answer').value.trim();if(!text){$('#answerError').textContent='Tulis penerangan kamu dahulu.';return}submitted=true;delete state.drafts[id];state.answers.push({id,text,time:Date.now(),mode:state.mode,attempt:state.answers.filter(a=>a.id===id).length+1});save();$('#modal').close();done()}}
-function award(n,next){if(review)return;if(!state.badges.includes(n)){state.badges.push(n);state.stamps.push({mission:n,time:Date.now()})}state.scene=next;save();say('Tahniah! Kamu memperoleh lencana '+badgeNames[n-1]+'. Catatan kamu disimpan untuk semakan guru.','congrats-'+n);modal(`<div class="celebrate"><h2>Tahniah, peneroka!</h2><canvas id="stampAlya" width="80" height="96"></canvas><div class="badge">✦</div><h3>${badgeNames[n-1]}</h3><p>${state.badges.length}/5 lencana terkumpul</p><div class="stamp">SELESAI!</div><button id="nextMission">${n===1?'Terokai Pusat Teknologi':n===2?'Masuk Makmal Tani Pintar':'Lihat Pintu Misi 4'}</button></div>`);tone(880);setTimeout(()=>tone(180),1000);$('#nextMission').onclick=()=>{$('#modal').close();go(next)}}
-function answer2(){if(review){toast('Mod ulang kaji tidak memberikan lencana. Sambung permainan untuk merekod kemajuan.');return}if(systems.some((s,i)=>state.inspected[i].length<s.parts.length)){toast('Periksa semua komponen di keempat-empat stesen dahulu.');return}modal('<h2>Jelaskan dua sistem</h2><p>Pilih dua sistem yang berbeza. Terangkan urutan pergerakan air serta fungsi komponen.</p>'+[0,1].map(n=>`<label>Sistem ${n+1}<select id="systemChoice${n}">${systems.map((s,i)=>`<option value="${i}" ${i===n?'selected':''}>${s.name}</option>`).join('')}</select></label><label>Penerangan ${n+1}<textarea id="explanation${n}"></textarea></label>`).join('')+'<p id="systemError" role="alert"></p><button id="saveSystems">Simpan Penerangan</button>');const draft=state.drafts.misi2;for(let n=0;n<2;n++){if(draft){$('#systemChoice'+n).value=draft.choices[n];$('#explanation'+n).value=draft.texts[n]}for(const id of ['systemChoice','explanation'])$('#'+id+n).oninput=()=>{state.drafts.misi2={choices:[0,1].map(i=>$('#systemChoice'+i).value),texts:[0,1].map(i=>$('#explanation'+i).value)};save()}}let submitted=false;$('#saveSystems').onclick=()=>{if(submitted)return;const choices=[0,1].map(n=>Number($('#systemChoice'+n).value)),texts=[0,1].map(n=>$('#explanation'+n).value.trim());if(choices[0]===choices[1]||texts.some(t=>!t)){$('#systemError').textContent='Pilih dua sistem berbeza dan lengkapkan kedua-dua penerangan.';return}submitted=true;delete state.drafts.misi2;state.answers.push({id:'misi2',text:choices.map((c,i)=>systems[c].name+': '+texts[i]).join('\n'),systems:choices,time:Date.now(),mode:state.mode,attempt:state.answers.filter(a=>a.id==='misi2').length+1});award(2,'workshop')}}
+function award(n,next){if(review)return;if(n===4&&!state.cases.every(c=>c.repaired&&c.explained))return;if(n===5&&state.finalDone.length!==3)return;const missing=Array.from({length:n-1},(_,i)=>i+1).filter(id=>!state.badges.includes(id));if(missing.length){if(state.mode==='kelas'){modal('<h2>Pratonton Kelas — Belum Tamat</h2><p>Aktiviti ini telah ditunjukkan, tetapi Misi '+missing.join(', ')+' belum dilengkapkan. Tiada lencana baharu diberikan dan kemajuan akhir tidak diubah.</p><button id="previewReturn">Kembali ke Senarai Misi</button>');$('#previewReturn').onclick=()=>{$('#modal').close();missionMenu()}}else toast('Selesaikan misi sebelumnya dahulu.');return;}if(!state.badges.includes(n)){state.badges.push(n);state.stamps.push({mission:n,time:Date.now()})}if(n===5&&[1,2,3,4,5].every(id=>state.badges.includes(id)))state.completedAt??=Date.now();state.scene=next;save();say(n===4?'Syabas! Kamu berjaya mengenal pasti punca masalah dan memulihkan kedua-dua sistem penanaman!':'Tahniah! Kamu memperoleh lencana '+badgeNames[n-1]+'. Catatan kamu disimpan untuk semakan guru.','congrats-'+n);modal(`<div class="celebrate"><h2>Tahniah, peneroka!</h2><canvas id="stampAlya" width="80" height="96"></canvas><div class="badge">✦</div><h3>${badgeNames[n-1]}</h3><p>${state.badges.length}/5 lencana terkumpul</p><div class="stamp final-stamp">SELESAI!</div><button id="nextMission">${n===1?'Terokai Pusat Teknologi':n===2?'Masuk Makmal Tani Pintar':n===3?'Lihat Pintu Misi 4':n===4?'Masuk Balai Bandar Hijau':'Tamat Permainan'}</button></div>`);sound.effect('reward');setTimeout(()=>{if($('#stampAlya'))sound.effect('stamp')},950);$('#nextMission').onclick=()=>{$('#modal').close();go(next)}}
+function answer2(){if(review){toast('Mod ulang kaji tidak memberikan lencana. Sambung permainan untuk merekod kemajuan.');return}if(state.mode==='kelas'){modal('<h2>Perbincangan Kelas — Dua Sistem</h2><p>Guru: tunjukkan dua sistem, minta murid berbincang dan catat jawapan masing-masing pada Lembaran Respons Individu. Rekod ini bukan jawapan individu semua murid.</p><label>Catatan guru (pilihan)<textarea id="classSystemNote"></textarea></label><button id="confirmClassSystems">Perbincangan Selesai</button>');$('#confirmClassSystems').onclick=()=>{const id='misi2';state.answers.push({id,text:$('#classSystemNote').value.trim(),kind:'class_activity',individualAnswersCollected:false,time:Date.now(),mode:'kelas',attempt:state.answers.filter(a=>a.id===id).length+1});save();$('#modal').close();award(2,'workshop')};return}if(systems.some((s,i)=>state.inspected[i].length<s.parts.length)){toast('Periksa semua komponen di keempat-empat stesen dahulu.');return}modal('<h2>Jelaskan dua sistem</h2><p>Pilih dua sistem yang berbeza. Terangkan urutan pergerakan air serta fungsi komponen.</p>'+[0,1].map(n=>`<label>Sistem ${n+1}<select id="systemChoice${n}">${systems.map((s,i)=>`<option value="${i}" ${i===n?'selected':''}>${s.name}</option>`).join('')}</select></label><label>Penerangan ${n+1}<textarea id="explanation${n}"></textarea></label>`).join('')+'<p id="systemError" role="alert"></p><button id="saveSystems">Simpan Penerangan</button>');const draft=state.drafts.misi2;for(let n=0;n<2;n++){if(draft){$('#systemChoice'+n).value=draft.choices[n];$('#explanation'+n).value=draft.texts[n]}for(const id of ['systemChoice','explanation'])$('#'+id+n).oninput=()=>{state.drafts.misi2={choices:[0,1].map(i=>$('#systemChoice'+i).value),texts:[0,1].map(i=>$('#explanation'+i).value)};save()}}let submitted=false;$('#saveSystems').onclick=()=>{if(submitted)return;const choices=[0,1].map(n=>Number($('#systemChoice'+n).value)),texts=[0,1].map(n=>$('#explanation'+n).value.trim());if(choices[0]===choices[1]||texts.some(t=>!t)){$('#systemError').textContent='Pilih dua sistem berbeza dan lengkapkan kedua-dua penerangan.';return}submitted=true;delete state.drafts.misi2;state.answers.push({id:'misi2',text:choices.map((c,i)=>systems[c].name+': '+texts[i]).join('\n'),systems:choices,time:Date.now(),mode:state.mode,attempt:state.answers.filter(a=>a.id==='misi2').length+1});award(2,'workshop')}}
 function compare(){modal(`<h2>Bandingkan Sistem</h2><div class="compare">${systems.map((s,i)=>`<article><h3>${s.name}</h3><p>${s.text}</p><p>${i===1||i===2?'Pam mengalirkan air dalam kitaran.':i===3?'Air naik melalui tindakan kapilari, tanpa pam.':'Larutan statik, tanpa pam kitaran.'}</p><button data-system="${i}">Lihat Animasi</button></article>`).join('')}</div><p>Bandingkan khususnya kultur air: tanpa kitaran menyimpan larutan statik, manakala dengan kitaran menggunakan pam dan salur kembali. Akuaponik melibatkan ikan dan mikroorganisma; bekas pengairan kendiri menggunakan tindakan kapilari.</p>`);document.querySelectorAll('[data-system]').forEach(b=>b.onclick=()=>{$('#modal').close();go('sim'+b.dataset.system)})}
-function book(){modal(`<h2>Buku Misi Pertanian</h2><p>${state.badges.length}/5 lencana · Kemajuan disimpan pada pelayar ini sahaja.</p><h3>Koleksi Lencana</h3><p>${state.badges.length?state.badges.map(n=>'✦ '+badgeNames[n-1]+' · SELESAI!').join('<br>'):'Belum ada lencana.'}</p><h3>Nota Pertanian</h3>${state.notes.map(n=>`<article>${n==='definition'?definition:n.startsWith('system')?(systems[Number(n.at(-1))]?.text||''):places.find(p=>p.id===n)?.items.map(x=>x[1]).join(' ')||''}</article>`).join('')||'<p>Periksa objek untuk membuka nota.</p>'}<h3>Rekod Pembelajaran</h3><p>${state.answers.length} catatan · ${state.hints.length} penggunaan petunjuk</p>${state.answers.map(a=>`<article><b>${esc(a.id.replace('misi','Misi '))} · Cubaan ${a.attempt}</b><p>${esc(a.text)}</p></article>`).join('')}<p>Guru menilai ketepatan maksud, kesesuaian contoh, urutan aliran dan fungsi komponen. Terima penerangan setara yang munasabah; rekod ini tidak memberikan TP secara automatik.</p><button id="export">Eksport Rekod PBD</button><button id="replay">Ulang Kaji Animasi</button>`);$('#export').onclick=()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(state,null,2)],{type:'application/json'}));a.download='rekod-misi-pertanian.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)};$('#replay').onclick=()=>{$('#modal').close();review=true;go('lab')}}
-function missionMenu(){modal('<h2>Pilih Misi / Main Semula</h2><p>Main semula mengekalkan lencana dan sejarah jawapan.</p><div id="missionButtons"></div><p>Misi 4 hanya mempunyai pintu masuk; Misi Akhir belum dibangunkan.</p>');[['Misi 1 · Misteri Pertanian Bandar','map'],['Misi 2 · Rahsia Sistem Takungan','lab'],['Misi 3 · Makmal Tani Pintar','workshop'],['Misi 4 · Pintu masuk','gate4']].forEach(([label,target],i)=>{const b=btn(label,()=>{$('#modal').close();review=false;go(target)},'#missionButtons');b.disabled=i>0&&!state.badges.includes(i)&&state.mode!=='kelas'})}
-function settings(){modal(`<h2>Tetapan</h2><label>Mod permainan <select id="mode"><option value="kendiri">Mod Kendiri</option><option value="kelas">Mod Kelas</option></select></label><label><input id="mute" type="checkbox" ${state.muted?'checked':''}> Bisukan semua audio</label>${['voice','music','sfx'].map((x,i)=>`<label>${['Kelantangan suara','Kelantangan muzik latar','Kelantangan kesan bunyi'][i]}<input type="range" data-vol="${x}" min="0" max="1" step=".05" value="${state.vol[x]}"></label>`).join('')}<p>Suara: hanya ms-MY. Jika suara peranti atau rakaman tiada, sari kata kekal tersedia.</p><p>Mod Kelas membolehkan guru terus memilih tiga misi yang tersedia. Gunakan respons individu untuk PBD.</p><p>Cadangan 60 minit: induksi 5 · Misi 1: 8 · Misi 2: 14 · Misi 3: 10 · Misi 4: 8 · akhir: 10 · penutup: 5. Fasa 2 menyediakan Misi 1 hingga Misi 3.</p><p>${storageOK?'Simpanan pelayar tersedia.':'Simpanan pelayar tidak tersedia; eksport rekod sebelum keluar.'}</p>`);$('#mode').value=state.mode;$('#mode').onchange=e=>{save();state=profiles[e.target.value];review=false;save();$('#modal').close();go('home')};$('#mute').onchange=e=>{state.muted=e.target.checked;stopVoice();save()};document.querySelectorAll('[data-vol]').forEach(el=>el.oninput=()=>{state.vol[el.dataset.vol]=Number(el.value);if(musicGain)musicGain.gain.value=state.muted?0:state.vol.music*.08;save()})}
-$('#home').onclick=()=>go('home');$('#book').onclick=book;$('#settings').onclick=settings;$('#close').onclick=()=>$('#modal').close();$('#listen').onclick=speak;
-function frame(t){const delta=Math.min((t-last)/1000,.1);last=t;if(!paused)simTime+=delta;if(scene==='sim2')drawScience($('#world'),'aqua',simTime);else if(scene==='sim3'||scene==='flow')drawScience($('#world'),'self',simTime);else if(scene==='workshop')drawScience($('#world'),'self',0,state.assembly,true);else art.draw(scene,scene.startsWith('sim')?simTime:t/1000);if(scene==='flow'&&simTime>=6&&!flowCompleted){flowCompleted=true;state.simulationSeen=true;save();$('#explainLab').disabled=false;}if($('#stampAlya')){const stampArt=renderer($('#stampAlya'));stampArt.clear();stampArt.alya(40,50,t/1000,2.7,'stamp');}portrait.clear();portrait.alya(40,50,t/1000,2.7,talking?'talk':Math.floor(t/3000)%2?'wave':'idle');requestAnimationFrame(frame)}go('home');requestAnimationFrame(frame);
-function workshop(){
- say('Makmal Tani Pintar: pasang tiga komponen pada bekas. A ialah penanda aras air, B ialah saluran mengisi air, C menghubungkan ruang air dengan medium. Seret komponen atau pilih komponen kemudian sentuh ruang.','workshop');$('#objective').textContent='Misi 3 · Pasang tiga komponen';
- $('#activity').innerHTML='<div id="assemblyBoard"></div><p id="assemblyFeedback" role="status">Pilih komponen dan letakkan pada ruang yang sesuai.</p><div id="cameraControls"></div><video id="camera" muted playsinline hidden></video><p id="cameraStatus" role="status">Tetikus / Sentuhan aktif. Kamera belum dihidupkan.</p>';
- // Board is over the cutaway; large targets use the same normalized coordinates.
- const board=$('#assemblyBoard');$('#stage').append(board);
- assemblyUI=mountAssembly(board,state.assembly,()=>{save();$('#runSimulation').disabled=state.assembly.length!==3},s=>$('#assemblyFeedback').textContent=s);
- const run=btn('Jalankan Simulasi',()=>go('flow'));run.id='runSimulation';run.disabled=state.assembly.length!==3;
- btn('Pasang Semula',()=>{state.assembly=[];save();go('workshop')});btn('Kembali ke Pusat',()=>go('lab'));
- const status=s=>{if($('#cameraStatus'))$('#cameraStatus').textContent=s};
- btn('Kawalan Tangan',()=>{hands?.stop();$('#camera').hidden=false;hands=new HandControl($('#camera'),status,(x,y,phase)=>{if(!assemblyUI)return;if(phase==='lost'){assemblyUI.hide();return}const box=board.getBoundingClientRect();assemblyUI.hand(x*box.width,y*box.height,phase)});hands.start()},'#cameraControls');
- btn('Tetikus / Sentuhan',()=>{hands?.stop();assemblyUI?.hide();$('#camera').hidden=true;status('Tetikus / Sentuhan aktif. Kamera dimatikan.')},'#cameraControls');
- btn('Kalibrasi Semula',()=>hands?.detector?hands.calibrate():status('Hidupkan Kawalan Tangan dahulu.'),'#cameraControls');
- btn('Cuba Semula Kamera',()=>{if(hands)hands.start();else status('Pilih Kawalan Tangan untuk memberi kebenaran kamera.')},'#cameraControls');
+function downloadCsv(rows,filename,quote){
+ const content='\uFEFF'+rows.map(row=>row.map(quote).join(',')).join('\r\n');
+ const url=URL.createObjectURL(new Blob([content],{type:'text/csv;charset=utf-8;'}));
+ const a=document.createElement('a');a.href=url;a.download=filename;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1200);
 }
-function flowScene(){if(state.assembly.length!==3){go('workshop');return}flowCompleted=state.simulationSeen;$('#objective').textContent='Ruang air → partikel kapilari → medium → akar';say('Bahan kapilari bersentuhan dengan air. Air naik melalui bahan ini ke medium melalui tindakan kapilari, tanpa pam. Perhatikan perjalanan air sebelum menerangkan fungsinya.','capillary-flow');const pause=btn('Jeda',()=>{paused=!paused;pause.textContent=paused?'Mainkan':'Jeda'});btn('Ulang Animasi',()=>{simTime=0;paused=false;pause.textContent='Jeda'});const explain=btn('Jelaskan Tindakan Kapilari',()=>answerForm('misi3','1. Apakah fungsi ruang partikel kapilari? 2. Bagaimanakah air bergerak dari takungan ke medium tanaman?',()=>award(3,'gate4')));explain.id='explainLab';explain.disabled=!flowCompleted;btn('Periksa Semula Komponen',()=>go('workshop'))}
+function downloadBackup(payload,filename){
+ const url=URL.createObjectURL(new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}));
+ const a=document.createElement('a');a.href=url;a.download=filename;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1200);
+}
+function book(){
+ modal('<section class="mission-book"><h2>Buku Misi Pertanian</h2><p>Nota interaktif, rekod kemajuan dan instrumen guru untuk SP 7.1.1 dan SP 7.1.2.</p><div class="book-tabs" role="group" aria-label="Bahagian Buku Misi"><button type="button" data-book-tab="nota">Kad Ilmu</button><button type="button" data-book-tab="lencana">Lencana & Rekod</button><button type="button" data-book-tab="pbd">Rubrik PBD</button><button type="button" data-book-tab="panduan">Panduan PdP</button></div><div id="bookPages"></div><div class="book-actions"><button id="viewCard">Kad Pemilihan Sistem Penanaman</button><button id="viewReport">Laporan Pembelajaran</button><button id="viewWorksheet">Lembaran Respons Individu</button><button id="exportPBD">Eksport PBD CSV</button><button id="export">Eksport Rekod JSON</button><button id="backup">Sandaran Kedua-dua Mod</button><button id="importBackup">Import Sandaran</button><input id="backupFile" type="file" accept=".json,application/json" hidden><button id="replay">Ulang Kaji Animasi</button></div></section>');
+ const pages=$('#bookPages'), card=(name,body,icon='🌱')=>'<article class="knowledge-card"><header><span aria-hidden="true">'+icon+'</span><strong>'+esc(name)+'</strong></header><p>'+esc(body)+'</p></article>';
+ const opened=state.notes;
+ function notes(){
+  const items=[];
+  if(opened.includes('definition'))items.push(card('Maksud Pertanian Bandar · SP 7.1.1',definition,'🏘️'));
+  for(const p of places)if(opened.includes(p.id))items.push(card(p.name,p.items.map(x=>x[0]+': '+x[1]).join('\n'),'🌿'));
+  systems.forEach((system,i)=>{if(!opened.includes('system'+i))return;
+   const parts=state.inspected[i].map(j=>system.parts[j]).filter(Boolean).map(x=>x[0]+': '+x[1]).join('\n');
+   items.push(card(system.name,system.text+(parts?'\nKomponen diperhatikan:\n'+parts:''),i===2?'🐟':'💧'));
+  });
+  for(let i=0;i<repairCases.length;i++)if(opened.includes('repair'+i))items.push(card('Kes '+(i+1)+' · Cara Membaiki',repairCases[i].note,'🛠️'));
+  pages.innerHTML='<div class="book-section-head"><h3>Kad Ilmu Pertanian</h3><p>'+items.length+' kad ilmu dibuka. Periksa objek dan stesen untuk menambah koleksi.</p></div><div class="knowledge-grid">'+(items.join('')||'<p class="book-empty">Belum ada kad ilmu. Teroka bandar dan stesen sistem terlebih dahulu.</p>')+'</div><p class="book-note">Animasi boleh diulang tanpa mengubah lencana atau jawapan asal.</p>';
+ }
+ function badges(){
+  const tiles=badgeNames.map((name,i)=>{const n=i+1,have=state.badges.includes(n),stamp=state.stamps.find(x=>x.mission===n);
+   return '<article class="badge-tile'+(have?' collected':'')+'"><span aria-hidden="true">'+(have?'✦':'◇')+'</span><strong>Misi '+n+'</strong><p>'+esc(name)+'</p><small>'+(have?(stamp?new Date(stamp.time).toLocaleString('ms-MY'):'SELESAI'):'Belum selesai')+'</small></article>';
+  }).join('');
+  const saved=state.answers.slice().sort((a,b)=>b.time-a.time);
+  pages.innerHTML='<div class="book-section-head"><h3>Pasport Peneroka</h3><p>'+state.badges.length+'/5 lencana · '+saved.length+' catatan · '+state.hints.length+' petunjuk</p></div><div class="badge-grid">'+tiles+'</div><h3>Jejak Pembelajaran</h3><div class="book-history">'+(saved.map(a=>'<article><strong>'+esc(a.id)+' · Cubaan '+esc(a.attempt)+'</strong><small>'+new Date(a.time).toLocaleString('ms-MY')+'</small><p>'+esc(a.text||'Aktiviti perbincangan kelas — jawapan individu tidak dikumpul.')+'</p></article>').join('')||'<p>Belum ada catatan disimpan.</p>')+'</div><p class="book-note">Lencana ialah rekod penyelesaian aktiviti, bukan bukti automatik penguasaan DSKP.</p>';
+ }
+ function guide(){
+ const SP1=state.answers.some(a=>a.id==='misi1'||a.id==='akhir0'),SP2=state.answers.some(a=>a.id==='misi2'||a.id==='akhir1');
+ const count=places.reduce((n,p)=>n+p.items.filter((_,i)=>state.visited.includes(p.id+i)).length,0);
+ const seen=state.inspected.reduce((n,items)=>n+items.length,0);
+ const observed=[
+  ['SP 7.1.1: Menerangkan maksud pertanian bandar',SP1,'Jawapan maksud dan contoh perlu disemak oleh guru.'],
+  ['SP 7.1.2: Menjelaskan sistem takungan',SP2,'Penerangan dua sistem perlu disemak oleh guru.'],
+  ['Penerokaan contoh pertanian bandar',count===6,'Objek diperiksa: '+count+'/6.'],
+  ['Penerokaan komponen sistem takungan',seen>=8,'Komponen diperiksa: '+seen+'/'+systems.reduce((n,x)=>n+x.parts.length,0)+'.']
+ ];
+ pages.innerHTML='<div class="book-section-head"><h3>Panduan PdP · 60 Minit</h3><p>Fokus SP 7.1.1 & SP 7.1.2. Senarai ini menunjukkan aktiviti direkod, bukan TP automatik.</p></div><div class="lesson-checklist">'+observed.map(([name,yes,detail])=>'<article><span aria-hidden="true">'+(yes?'✓':'○')+'</span><strong>'+esc(name)+'</strong><small>'+esc(detail)+'</small></article>').join('')+'</div><h3>Cadangan Pengurusan Masa</h3><div class="lesson-timeline">'+lessonTimeline.map(([name,min,notes])=>'<article><strong>'+esc(name)+' · '+min+' minit</strong><p>'+esc(notes)+'</p></article>').join('')+'</div><details class="book-glossary"><summary>Glosari Istilah Pertanian (klik untuk buka)</summary><div class="knowledge-grid">'+vocabulary.map(([term,desc])=>card(term,desc,'📖')).join('')+'</div></details><p class="book-note">Rujukan: DSKP KSSR RBT Tahun 5 (Semakan 2017), Standard Pembelajaran 7.1.1 & 7.1.2; Buku Teks RBT Tahun 5, Unit 7 Pertanian Bandar.</p>';
+ }
+ function rubric(){
+  const rubricTable='<div class="rubric-grid">'+pbdRubric.map(item=>'<article class="rubric-card"><h4>SP '+esc(item.sp)+' — '+esc(item.title)+'</h4>'+item.levels.map((desc,i)=>'<p><b>Skor '+(i+1)+'</b> · '+esc(desc)+'</p>').join('')+'</article>').join('')+'</div>';
+  const assessment=state.mode==='kelas'
+   ?'<p class="book-note"><strong>Mod Kelas:</strong> Ini hanya paparan dan borang rujukan guru. Jawapan setiap murid tidak dikumpul oleh komputer ini. Catat skor individu secara berasingan.</p>'
+   :'<form id="teacherRubric" onsubmit="return false"><h3>Catatan Guru (Manual)</h3><label>Nama murid untuk rekod individu<input id="pbdStudentName" type="text" maxlength="120" placeholder="Isi nama murid (pilihan)"></label>'+pbdRubric.map(item=>'<label>SP '+esc(item.sp)+' — '+esc(item.title)+'<select data-score="'+item.sp+'"><option value="">Belum dinilai</option><option value="1">1 — Perlu bimbingan</option><option value="2">2 — Separa tepat</option><option value="3">3 — Tepat</option></select></label>').join('')+'<h3>Senarai Semak Pemerhatian</h3>'+pbdChecklist.map((item,i)=>'<label>'+esc(item)+'<select data-check="'+i+'"><option value="">Belum direkod</option><option value="ya">Ya</option><option value="belum">Belum</option></select></label>').join('')+'<label>Catatan / Tindakan Susulan<textarea id="pbdComment" maxlength="3000"></textarea></label><button type="button" id="saveRubric">Simpan Penilaian Guru</button><p id="rubricStatus" role="status"></p></form>';
+  pages.innerHTML='<div class="book-section-head"><h3>Rubrik Penerangan — Lampiran 3 RPH</h3><p>Skala aktiviti 1–3, <strong>bukan Tahap Penguasaan (TP)</strong>. Guru membuat pertimbangan profesional berdasarkan jawapan murid.</p></div>'+rubricTable+assessment;
+  const form=$('#teacherRubric');if(!form)return;
+  form.querySelectorAll('[data-score]').forEach(el=>{el.value=state.pbd.scores[el.dataset.score]||''});
+  form.querySelectorAll('[data-check]').forEach(el=>{el.value=state.pbd.checks[Number(el.dataset.check)]||''});
+  $('#pbdComment').value=state.pbd.comment||'';$('#pbdStudentName').value=state.pbd.studentName||'';
+  $('#saveRubric').onclick=()=>{
+   for(const el of form.querySelectorAll('[data-score]'))state.pbd.scores[el.dataset.score]=[1,2,3].includes(Number(el.value))&&el.value!==''?Number(el.value):null;
+   for(const el of form.querySelectorAll('[data-check]'))state.pbd.checks[Number(el.dataset.check)]=el.value;
+   state.pbd.comment=$('#pbdComment').value.trim();state.pbd.studentName=$('#pbdStudentName').value.trim().slice(0,120);state.pbd.assessedAt=Date.now();save();
+   $('#rubricStatus').textContent='Penilaian manual disimpan. Ini bukan pengiraan TP automatik.';
+  };
+ }
+ const sections={nota:notes,lencana:badges,pbd:rubric,panduan:guide};
+ const setTab=id=>{pages.replaceChildren();sections[id]();document.querySelectorAll('[data-book-tab]').forEach(b=>{const active=b.dataset.bookTab===id;b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active))})};
+ document.querySelectorAll('[data-book-tab]').forEach(b=>b.onclick=()=>setTab(b.dataset.bookTab));
+ setTab('nota');
+ $('#viewCard').onclick=phase3.card;$('#viewCard').disabled=!state.cards.length;
+ $('#viewReport').onclick=phase3.report;$('#viewWorksheet').onclick=phase3.worksheet;
+ $('#exportPBD').onclick=()=>{
+  if(state.mode==='kelas'){toast('Mod Kelas bukan rekod individu. Sila gunakan lembaran jawapan murid.');return}
+  const quote=value=>{
+   let valueText=String(value??'').replace(/[\r\n]+/g,' ');
+   if(/^[=+@-]/.test(valueText))valueText="'"+valueText;
+   return '"'+valueText.replaceAll('"','""')+'"';
+  };
+  const row=[state.pbd.studentName||'',state.pbd.assessedAt?new Date(state.pbd.assessedAt).toISOString():'',state.pbd.scores['7.1.1']??'',state.pbd.scores['7.1.2']??'',...state.pbd.checks,state.pbd.comment];
+  const header=['Nama Murid','Tarikh Penilaian','Skor 7.1.1 (1-3)','Skor 7.1.2 (1-3)',...pbdChecklist.map((_,i)=>'Semakan '+(i+1)),'Catatan Guru'];
+  downloadCsv([header,row],'ringkasan-pbd-misi-pertanian.csv',quote);
+ };
+
+ $('#export').onclick=()=>downloadBackup(state,'rekod-misi-pertanian-'+state.mode+'.json');
+ $('#backup').onclick=()=>downloadBackup({product:'misi-pertanian-bandar',format:1,exportedAt:new Date().toISOString(),mode:state.mode,profiles},'sandaran-misi-pertanian-kedua-dua-mod.json');
+ $('#importBackup').onclick=()=>$('#backupFile').click();
+ $('#backupFile').onchange=async event=>{
+  const file=event.target.files?.[0];event.target.value='';if(!file)return;
+  try{
+   if(file.size>2_000_000)throw Error('Fail melebihi 2 MB. Pilih fail sandaran permainan JSON.');
+   const data=JSON.parse(await file.text());
+   if(!data||typeof data!=='object'||Array.isArray(data))throw Error('Format sandaran tidak sah.');
+   let next;
+   if(data.product==='misi-pertanian-bandar'&&data.format===1&&data.profiles&&typeof data.profiles==='object'&&['kendiri','kelas'].every(m=>data.profiles[m]&&Array.isArray(data.profiles[m].badges)&&Array.isArray(data.profiles[m].answers))){
+    next={kendiri:normalizeProgress(data.profiles.kendiri,'kendiri'),kelas:normalizeProgress(data.profiles.kelas,'kelas')};
+   }else if(['kendiri','kelas'].includes(data.mode)&&Array.isArray(data.answers)&&Array.isArray(data.badges)){
+    next={...profiles,[data.mode]:normalizeProgress(data,data.mode)};
+   }else throw Error('Fail ini bukan sandaran Misi Pertanian Bandar yang disokong.');
+   const counts=next.kendiri.badges.length+'/'+next.kelas.badges.length;
+   modal('<h2>Sahkan Import Sandaran</h2><p>Import menggantikan rekod yang dipilih dalam pelayar ini termasuk jawapan dan penilaian guru. Eksport sandaran lama dahulu jika perlu.</p><p>Lencana dalam sandaran: Mod Kendiri / Mod Kelas = '+esc(counts)+'</p><button id="confirmImport">Ya, pulihkan sandaran</button><button id="cancelImport">Batal</button>');
+   $('#cancelImport').onclick=()=>$('#modal').close();
+   $('#confirmImport').onclick=()=>{
+    const previous=state;
+    try{
+     // Write and validate the full backup before changing any in-memory progress.
+     localStorage.setItem('misi-bandar-v2',JSON.stringify({mode:previous.mode,profiles:next}));
+     profiles=next;state=profiles[previous.mode];storageOK=true;review=false;stopVoice();
+     sound.sync();$('#modal').close();go('home');toast('Sandaran berjaya dipulihkan.');
+    }catch{toast('Import gagal. Rekod lama masih dikekalkan. Semak ruang simpanan pelayar.')}
+   };
+  }catch(err){toast('Import tidak berjaya: '+err.message)}
+ };
+ $('#replay').onclick=()=>{$('#modal').close();review=true;go('lab')};
+}
+function missionMenu(){modal('<h2>Pilih Misi / Main Semula</h2><p>Main semula mengekalkan lencana dan sejarah jawapan.</p><div id="missionButtons"></div><p>Lencana menunjukkan penyelesaian aktiviti, bukan Tahap Penguasaan.</p>');[['Misi 1 · Misteri Pertanian Bandar','map'],['Misi 2 · Rahsia Sistem Takungan','lab'],['Misi 3 · Makmal Tani Pintar','workshop'],['Misi 4 · Operasi Selamatkan Tanaman','gate4'],['Misi Akhir · Wira Pertanian Bandar','final0']].forEach(([label,target],i)=>{const b=btn(label,()=>{$('#modal').close();review=false;phase3.replay(target)},'#missionButtons');b.disabled=i>0&&!state.badges.includes(i)&&state.mode!=='kelas'})}
+function deviceCheck(){
+ const secure=window.isSecureContext,hasCamera=!!navigator.mediaDevices?.getUserMedia,voice=!!window.speechSynthesis;
+ const w=window.innerWidth,h=window.innerHeight;
+ modal('<h2>Semakan Peranti</h2><p>Semak kesediaan pelayar sebelum permainan. Gambar dan video tidak dihantar ke pelayan.</p><div class="device-results"><p><strong>Paparan:</strong> '+w+' × '+h+'. Kanvas permainan ialah 16:9; pada telefon menegak, aktiviti dipaparkan di bawah.</p><p><strong>HTTPS / localhost:</strong> '+(secure?'Ya':'Tidak — kamera memerlukan HTTPS atau localhost')+'</p><p><strong>API kamera:</strong> '+(hasCamera?'Tersedia':'Tidak tersedia')+'</p><p><strong>Pembaca suara:</strong> '+(voice?sound.availableVoices().length+' suara ditemui':'Tidak disokong')+'</p><p><strong>Internet:</strong> '+(navigator.onLine?'Disambung menurut pelayar':'Tiada sambungan; model tangan memerlukan internet')+'</p></div><button id="checkCameraPermission" type="button">Uji Kamera (Meminta Izin)</button><p id="cameraCheckResult" role="status">Kamera hanya diakses apabila butang ujian ditekan.</p><button id="backToSettings" type="button">Kembali ke Tetapan</button>');
+ $('#backToSettings').onclick=settings;
+ $('#checkCameraPermission').disabled=!secure||!hasCamera;
+ $('#checkCameraPermission').onclick=async()=>{
+  const status=$('#cameraCheckResult');status.textContent='Meminta izin kamera…';let stream;
+  try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user'},audio:false});if(status.isConnected)status.textContent='Kamera berfungsi. Aliran ujian sudah dihentikan. Uji cubitan sebenar dalam Misi 3.'}
+  catch(e){if(status.isConnected)status.textContent='Tidak dapat membuka kamera: '+(e?.name||'ralat')+'. Gunakan tetikus atau sentuhan.'}
+  finally{stream?.getTracks().forEach(track=>track.stop())}
+ };
+}
+function refreshVoiceOptions(){
+ const list=$('#voiceId'),language=$('#voiceLanguage');
+ if(!list||!language)return;
+ const previous=state.voiceId||'auto';
+ list.replaceChildren();
+ const add=(value,text)=>{const item=document.createElement('option');item.value=value;item.textContent=text;list.append(item)};
+ add('auto','Automatik (utamakan suara Google jika ada)');
+ const choices=sound.voicesFor(language.value);
+ for(const v of choices)add(sound.voiceKey(v),v.name+' — '+v.lang+(v.localService?' · Peranti':' · Dalam talian / pelayar'));
+ if(previous!=='auto'&&![...list.options].some(opt=>opt.value===previous)){const missing=document.createElement('option');missing.value=previous;missing.textContent='Suara pilihan tidak tersedia — pilih suara lain';missing.disabled=true;list.append(missing)}
+ list.value=previous;
+ if(previous!=='auto'&&list.selectedOptions[0]?.disabled){$('#voicePreviewStatus').textContent='Suara lama tidak tersedia pada peranti ini. Pilih suara lain.'}
+ else $('#voicePreviewStatus').textContent=choices.length?choices.length+' suara tersedia. Pilih dan klik Uji Suara.':'Tiada suara untuk bahasa ini pada peranti ini. Cuba bahasa lain.';
+}
+function settings(){
+ const labels={'id-ID':'Bahasa Indonesia (id-ID)','ms-MY':'Bahasa Melayu Malaysia (ms-MY)','en-US':'English (en-US)','zh-CN':'中文 (zh-CN)'};
+ modal(`<h2>Tetapan</h2>
+ <label>Mod permainan <select id="mode"><option value="kendiri">Mod Kendiri</option><option value="kelas">Mod Kelas</option></select></label>
+ <fieldset id="voiceSettings"><legend>Suara Alya — Pilih Bahasa dan Suara</legend>
+ <label>Bahasa suara / Aksen <select id="voiceLanguage">${sound.availableLanguages().map(lang=>`<option value="${esc(lang)}">${esc(labels[lang]||lang)}</option>`).join('')}</select></label>
+ <label>Suara tersedia pada peranti <select id="voiceId"></select></label>
+ <label>Kelajuan suara <input id="voiceRate" type="range" min="0.7" max="1.4" step="0.05" value="${state.voiceRate||1.1}"><output id="voiceRateLabel">${Number(state.voiceRate||1.1).toFixed(2)}×</output></label>
+ <button type="button" id="testVoice">Uji Suara Alya</button><button type="button" id="refreshVoices">Muat Semula Senarai Suara</button><label>Nada suara <input id="voicePitch" type="range" min="0.8" max="1.3" step="0.05" value="${state.voicePitch||1}"><output id="voicePitchLabel">${Number(state.voicePitch||1).toFixed(2)}×</output></label>
+ <p id="voicePreviewStatus" role="status">Sedang menyemak senarai suara peranti…</p>
+ <p class="voiceHint">Pilihan bahasa mengubah suara pembaca, bukan teks pembelajaran. Semua nota dan arahan permainan kekal dalam Bahasa Melayu Malaysia. Suara Google hanya muncul jika disediakan oleh pelayar anda.</p></fieldset>
+ <label><input id="mute" type="checkbox" ${state.muted?'checked':''}> Bisukan semua audio</label>
+ <label><input id="autoVoice" type="checkbox" ${state.autoVoice!==false?'checked':''}> Bacaan suara Alya secara automatik</label>
+ <label><input id="musicEnabled" type="checkbox" ${state.musicEnabled!==false?'checked':''}> Muzik latar</label>
+ ${['voice','music','sfx'].map((x,i)=>`<label>${['Kelantangan suara','Kelantangan muzik latar','Kelantangan kesan bunyi'][i]}<input type="range" data-vol="${x}" min="0" max="1" step=".05" value="${state.vol[x]}"></label>`).join('')}
+ <p>Jika tiada suara dipilih tersedia, permainan tidak menukar kepada suara lain secara senyap. Sari kata sentiasa boleh dibaca.</p>
+ <p>Mod Kelas membolehkan guru terus memilih lima misi yang tersedia. Gunakan respons individu untuk PBD.</p>
+ <p>Cadangan 60 minit: induksi 5 · Misi 1: 8 · Misi 2: 14 · Misi 3: 10 · Misi 4: 8 · akhir: 10 · penutup: 5.</p>
+ <p>${storageOK?'Simpanan pelayar tersedia.':'Simpanan pelayar tidak tersedia; eksport rekod sebelum keluar.'}</p><button type="button" id="deviceCheck">Periksa Peranti & Kamera</button>`);
+ const langSelect=$('#voiceLanguage');
+ if(![...langSelect.options].some(x=>x.value===state.voiceLanguage)){
+  const o=document.createElement('option');o.value=state.voiceLanguage;o.textContent=labels[state.voiceLanguage]||state.voiceLanguage;langSelect.append(o)
+ }
+ langSelect.value=state.voiceLanguage||'id-ID';
+ refreshVoiceOptions();
+ langSelect.onchange=()=>{state.voiceLanguage=langSelect.value;state.voiceId='auto';stopVoice();save();refreshVoiceOptions()};
+ $('#voiceId').onchange=e=>{state.voiceId=e.target.value;stopVoice();save()};
+ $('#voiceRate').oninput=e=>{state.voiceRate=Number(e.target.value);$('#voiceRateLabel').textContent=state.voiceRate.toFixed(2)+'×';save()};
+ $('#refreshVoices').onclick=()=>{window.speechSynthesis?.getVoices?.();refreshVoiceOptions()};
+ $('#voicePitch').oninput=e=>{state.voicePitch=Number(e.target.value);$('#voicePitchLabel').textContent=state.voicePitch.toFixed(2)+'×';save()};
+ $('#testVoice').onclick=()=>sound.speak('Hai, saya Alya! Selamat datang ke Misi Pertanian Bandar. Mari kita belajar bersama-sama.','',true);
+ $('#deviceCheck').onclick=deviceCheck;
+ $('#mode').value=state.mode;
+ $('#mode').onchange=e=>{save();state=profiles[e.target.value];review=false;stopVoice();sound.sync();save();$('#modal').close();go('home')};
+ $('#mute').onchange=e=>{state.muted=e.target.checked;if(state.muted)stopVoice();sound.sync();save()};
+ $('#autoVoice').onchange=e=>{state.autoVoice=e.target.checked;if(!state.autoVoice){stopVoice();$('#voiceStatus').textContent='Bacaan automatik dimatikan. Tekan Dengar Semula.'}save()};
+ $('#musicEnabled').onchange=e=>{state.musicEnabled=e.target.checked;sound.sync();save()};
+ document.querySelectorAll('[data-vol]').forEach(el=>el.oninput=()=>{state.vol[el.dataset.vol]=Number(el.value);sound.sync();save()});
+}
+window.speechSynthesis?.addEventListener?.('voiceschanged',()=>{if($('#voiceLanguage'))refreshVoiceOptions();sound.tryPendingVoices()});
+$('#dialogToggle').onclick=()=>{const b=$('#dialogToggle'),panel=$('#dialogueTranscript'),open=panel.hidden;panel.hidden=!open;b.setAttribute('aria-expanded',String(open));b.textContent=open?'Tutup dialog':'Lihat lagi';b.title=open?'Tutup dialog penuh':'Baca dialog penuh Alya di ruang aktiviti';if(open)panel.scrollIntoView({block:'nearest',behavior:'smooth'})};
+$('#transcriptClose').onclick=collapseDialogue;
+$('#transcriptListen').onclick=speak;
+$('#transcriptPause').onclick=()=>{const button=$('#transcriptPause');if(sound.isVoicePaused())sound.resumeVoice();else sound.pauseVoice();button.textContent=sound.isVoicePaused()?'Sambung Suara':'Jeda Suara'};
+$('#home').onclick=()=>go('home');$('#book').onclick=book;$('#settings').onclick=settings;$('#close').onclick=()=>$('#modal').close();$('#listen').onclick=speak;
+function frame(t){const delta=Math.min((t-last)/1000,.1);last=t;if(!paused)simTime+=delta;if(phase3.draw(scene,simTime,$('#world'),art)){}else if(scene==='sim2')drawScience($('#world'),'aqua',simTime);else if(scene==='sim3'||scene==='flow')drawScience($('#world'),'self',simTime);else if(scene==='workshop')drawScience($('#world'),'self',0,state.assembly,true);else art.draw(scene,scene.startsWith('sim')?simTime:t/1000);if(/^sim[0-3]$/.test(scene)){
+ const sys=Number(scene.at(-1));drawFlowOverlay($('#world'),sys,simTime);
+ const guide=$('#scienceGuide'),ix=stageIndex(sys,simTime),card=guide?.querySelector('[data-active-stage]');
+ if(card&&Number(card.dataset.activeStage)!==ix){card.dataset.activeStage=ix;card.innerHTML='<strong>Langkah '+(ix+1)+' — '+esc(learningStages[sys][ix][0])+'</strong><p>'+esc(learningStages[sys][ix][1])+'</p>';guide.querySelectorAll('[data-guide-dot]').forEach((node,n)=>node.classList.toggle('active',n===ix))}
+ }else if(scene==='flow'){
+   drawFlowOverlay($('#world'),3,simTime);
+   const ix=stageIndex(3,simTime),g=$('#capillaryGuide'),active=g?.querySelector('[data-capillary-stage]');
+   if(active&&Number(active.dataset.capillaryStage)!==ix){
+    active.dataset.capillaryStage=ix;
+    active.innerHTML='<strong>Langkah '+(ix+1)+' — '+esc(learningStages[3][ix][0])+'</strong><p>'+esc(learningStages[3][ix][1])+'</p>';
+    g.querySelectorAll('[data-guide-dot]').forEach((el,i)=>el.classList.toggle('active',i===ix));
+   }
+  }
+ if(scene==='flow'&&simTime>=6&&!flowCompleted){flowCompleted=true;state.simulationSeen=true;save();$('#explainLab').disabled=false;}if($('#stampAlya')){const stampArt=renderer($('#stampAlya'));stampArt.clear();stampArt.alya(40,50,t/1000,2.7,'stamp');}portrait.clear();portrait.alya(40,50,t/1000,2.7,talking?'talk':Math.floor(t/3000)%2?'wave':'idle');requestAnimationFrame(frame)}go('home');requestAnimationFrame(frame);if(storageWarning)setTimeout(()=>toast(storageWarning),400);
+function workshop(){
+ say('Makmal Tani Pintar: pasang tiga komponen pada bekas. A ialah penanda aras air, B ialah saluran mengisi air, C menghubungkan ruang air dengan medium. Seret komponen atau pilih komponen kemudian sentuh ruang.','workshop');
+ $('#objective').textContent='Misi 3 · Pasang tiga komponen';
+ $('#activity').innerHTML='<div id="assemblyBoard"></div><p id="assemblyFeedback" role="status">Pilih komponen dan letakkan pada ruang yang sesuai.</p>';
+ const panel=$('#cameraPanel'),video=$('#camera'),placeholder=$('#cameraPlaceholder');
+ panel.hidden=false;$('#playWorkspace').classList.add('camera-active');
+ video.hidden=true;placeholder.hidden=false;$('#cameraIndicator').textContent='Kamera dimatikan';
+ $('#cameraStatus').textContent='Tetikus / Sentuhan tersedia. Aktifkan Kawalan Tangan untuk melihat kamera.';
+ const board=$('#assemblyBoard');$('#stage').append(board);
+ assemblyUI=mountAssembly(board,state.assembly,()=>{sound.effect('correct');save();$('#runSimulation').disabled=state.assembly.length!==3},message=>{if(message.startsWith('Belum tepat'))sound.effect('error');$('#assemblyFeedback').textContent=message});
+ const run=btn('Jalankan Simulasi',()=>go('flow'));run.id='runSimulation';run.disabled=state.assembly.length!==3;
+ btn('Pasang Semula',()=>{state.assembly=[];save();go('workshop')});
+ btn('Kembali ke Pusat',()=>go('lab'));
+ const status=message=>{
+   $('#cameraStatus').textContent=message;
+   if(message.startsWith('Kamera tidak tersedia')||message.startsWith('Pengecaman terhenti')){
+     video.hidden=true;placeholder.hidden=false;$('#cameraIndicator').textContent='Kamera tidak tersedia';
+   }else if(message.includes('Sedia.')){
+     $('#cameraIndicator').textContent='Tangan dikesan';
+   }else if(message.includes('Kalibrasi')||message.includes('Meminta kamera')||message.includes('Memuatkan')){
+     $('#cameraIndicator').textContent='Memulakan kamera…';
+   }else if(message.includes('Tangan tidak dikesan')){
+     $('#cameraIndicator').textContent='Cari tangan';
+   }
+ };
+ const enableHand=()=>{
+   hands?.stop();
+   video.hidden=false;placeholder.hidden=true;
+   $('#cameraIndicator').textContent='Memulakan kamera…';
+   hands=new HandControl(video,status,(x,y,phase)=>{
+     if(!assemblyUI)return;
+     if(phase==='lost'){assemblyUI.hide();return}
+     const box=board.getBoundingClientRect();
+     assemblyUI.hand(x*box.width,y*box.height,phase)
+   });
+   hands.start();
+ };
+ btn('Kawalan Tangan',enableHand,'#cameraControls');
+ btn('Tetikus / Sentuhan',()=>{
+   hands?.stop();hands=null;assemblyUI?.hide();
+   video.hidden=true;placeholder.hidden=false;
+   $('#cameraIndicator').textContent='Kamera dimatikan';
+   status('Tetikus / Sentuhan aktif. Kamera dimatikan.');
+ },'#cameraControls');
+ btn('Kalibrasi Semula',()=>hands?.detector?hands.calibrate():status('Aktifkan Kawalan Tangan terlebih dahulu.'),'#cameraControls');
+ btn('Cuba Semula Kamera',enableHand,'#cameraControls');
+}
+function flowScene(){if(state.assembly.length!==3){go('workshop');return}flowCompleted=state.simulationSeen;
+ $('#activity').innerHTML='<section id="capillaryGuide" class="science-guide" aria-label="Langkah tindakan kapilari"><h3>Tindakan Kapilari — Tanpa Pam</h3><div class="science-dots">'+learningStages[3].map((_,i)=>'<span data-guide-dot="'+i+'">'+(i+1)+'</span>').join('')+'</div><article data-capillary-stage="-1"></article><p class="science-disclaimer">Perhatikan air bergerak dari ruang takungan melalui bahan penyerap ke medium dan akar. Ini ialah rajah pembelajaran, bukan kelajuan sebenar.</p></section>';$('#objective').textContent='Ruang air → partikel kapilari → medium → akar';say('Bahan kapilari bersentuhan dengan air. Air naik melalui bahan ini ke medium melalui tindakan kapilari, tanpa pam. Perhatikan perjalanan air sebelum menerangkan fungsinya.','capillary-flow');const pause=btn('Jeda',()=>{paused=!paused;pause.textContent=paused?'Mainkan':'Jeda'});btn('Ulang Animasi',()=>{simTime=0;paused=false;pause.textContent='Jeda'});const explain=btn('Jelaskan Tindakan Kapilari',()=>answerForm('misi3','1. Apakah fungsi ruang partikel kapilari? 2. Bagaimanakah air bergerak dari takungan ke medium tanaman?',()=>award(3,'gate4')));explain.id='explainLab';explain.disabled=!flowCompleted;btn('Periksa Semula Komponen',()=>go('workshop'))}
+
 </script></body></html>

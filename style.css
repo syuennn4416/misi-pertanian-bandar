@@ -5,3 +5,408 @@
 #objective{bottom:auto;top:10px;left:auto;right:12px;max-width:94%;pointer-events:none}
 #activity{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;color:#fff0cc}#activity:empty{display:none}#activity button{min-height:44px}#assemblyBoard{position:absolute;inset:0;touch-action:none}#assemblyBoard .parts-tray{position:absolute;left:2%;top:12%;display:flex;gap:8px;flex-wrap:wrap;max-width:96%}.parts-tray button{font-size:14px;touch-action:none}.parts-tray button.selected{outline:4px solid #ffeb69}.targets{position:absolute;inset:0;pointer-events:none}.targets button{position:absolute;transform:translate(-50%,-50%);width:64px;height:54px;opacity:.85;pointer-events:auto;background:#fff0b8;border:3px dashed #3b6f79}.hand-cursor{position:absolute;width:22px;height:22px;border:4px solid #f34d89;border-radius:50%;transform:translate(-50%,-50%);pointer-events:none;z-index:5;background:#ffffff80}#camera{width:160px;height:120px;object-fit:cover;transform:scaleX(-1)}#cameraControls{display:flex;gap:8px;flex-wrap:wrap}#assemblyFeedback,#cameraStatus{width:100%;margin:4px 0}#stampAlya{width:80px;height:96px;animation:stamp 1s both}.compare select,dialog select{max-width:100%}@media(max-width:600px){.parts-tray button{font-size:10px;padding:5px;min-height:36px}#assemblyBoard .parts-tray{gap:3px;top:17%}.targets button{width:44px;height:40px;font-size:12px;padding:3px}#activity{font-size:15px}#activity button{font-size:14px}}
 @media(max-width:600px){#assemblyBoard .parts-tray{top:24%}}
+.action-row{display:flex;flex-wrap:wrap;gap:8px;width:100%}.response-panel{width:100%;background:#fff3d5;color:#3f4837;border:3px solid #775335;border-radius:8px;padding:18px;line-height:1.6}.response-panel label{display:block}.response-panel input:not([type=checkbox]),.response-panel select{width:100%;font:inherit;padding:9px;border:2px solid #83966a;border-radius:6px}.response-panel textarea{display:block}.final-diagrams{display:grid;grid-template-columns:1fr 1fr;width:100%;gap:12px}.final-diagrams figure{margin:0;background:#fff3d5;color:#3f4837;padding:10px;border-radius:8px}.final-diagrams canvas{width:100%;height:auto}.final-diagrams figcaption{min-height:50px;font-size:16px}#finalError{color:#a23c2c}#repairStage{width:100%;font-weight:bold}.final-stamp{color:#b33432}#printContent dd{white-space:pre-wrap;margin:6px 0 20px}#printContent dt{font-weight:bold}#printContent p{white-space:pre-wrap}#printContent small{display:block;color:#475642}@media(max-width:600px){.final-diagrams{grid-template-columns:1fr}.response-panel{padding:12px}.response-panel select{font-size:14px}}@media print{body>*:not(dialog){display:none!important}dialog{position:static!important;display:block!important;border:0!important;width:100%!important;max-width:none!important;max-height:none!important;overflow:visible!important;box-shadow:none!important;color:#000!important;background:#fff!important}dialog button,#close{display:none!important}dialog::backdrop{display:none!important}#printContent{display:block!important}#printContent article{break-inside:avoid}#printContent small{display:block!important}}
+
+/* Phase 4: component hotspots are part of the interactive diagram, not decorations. */
+.part-hotspot{min-width:28px;width:30px;height:30px;padding:1px;border-radius:50%;font-size:14px;font-weight:900;background:#fff2a8;border-color:#385e55;box-shadow:0 2px #64513e;z-index:3}
+.part-hotspot:hover,.part-hotspot:focus-visible{background:#fffbd7;outline:2px solid #f5c359}
+@media(max-width:600px){.part-hotspot{min-width:24px;width:26px;height:26px;font-size:12px}}
+
+/* Phase 4 camera and responsive layout. Keep Alya and core Canvas artwork unchanged. */
+main{max-width:1360px;width:100%;padding:0 clamp(8px,2vw,20px) 30px}
+header{max-width:1400px}
+#playWorkspace{display:grid;grid-template-columns:minmax(0,1fr);gap:16px;align-items:start}
+#playWorkspace.camera-active{grid-template-columns:minmax(0,1fr) minmax(255px,330px)}
+#stage{width:100%;min-width:0;aspect-ratio:16/9}
+#cameraPanel{min-width:0;border:3px solid #d8b681;background:#f4e2b7;color:#473a2d;border-radius:9px;padding:12px;box-shadow:0 5px 0 #78523c}
+#cameraPanel[hidden],#camera[hidden],#cameraPlaceholder[hidden]{display:none!important}
+.camera-header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.camera-header strong{font-size:clamp(17px,1.5vw,21px)}
+#cameraIndicator{border-radius:4px;padding:4px 7px;background:#edc989;color:#493421;font-size:12px}
+#cameraViewport{position:relative;aspect-ratio:4/3;width:100%;max-width:460px;margin:auto;background:#183b36;border:3px solid #826448;border-radius:6px;overflow:hidden}
+#camera{display:block;width:100%;height:100%;object-fit:cover;transform:scaleX(-1);box-shadow:none}
+#cameraPlaceholder{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;height:100%;padding:14px;text-align:center;color:#f8f0d3}
+#cameraPlaceholder span{font-size:32px}
+#cameraPlaceholder p{font-size:14px;line-height:1.4;margin:0}
+#cameraStatus{font-size:14px;line-height:1.5;min-height:42px;margin:10px 0;overflow-wrap:anywhere}
+#cameraControls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+#cameraControls button{min-width:0;min-height:44px;padding:9px 6px;font-size:clamp(12px,1vw,14px);overflow-wrap:anywhere}
+.cameraPrivacy{font-size:12px;color:#574834;margin:10px 0 0;line-height:1.4}
+#controls{margin-left:0;gap:10px}
+#controls button,#activity button{min-height:44px}
+#dialogue{max-width:1100px;margin-left:auto;margin-right:auto}
+#activity{max-width:1250px;margin-left:auto;margin-right:auto}
+#playWorkspace.camera-active+#dialogue{margin-top:18px}
+@media(max-width:1000px){
+ #playWorkspace.camera-active{grid-template-columns:minmax(0,1fr)}
+ #cameraPanel{width:100%;max-width:520px;margin:0 auto}
+ #cameraViewport{max-width:380px}
+ #cameraControls button{font-size:14px}
+}
+@media(max-width:600px){
+ main{padding:0 8px 20px}
+ #playWorkspace{gap:11px}
+ #cameraPanel{padding:10px}
+ #cameraViewport{max-width:300px}
+ .camera-header strong{font-size:17px}
+ #controls{margin-left:0}
+ #controls button,#activity button{min-height:44px;max-width:100%}
+ #cameraStatus{font-size:13px}
+ #objective{font-size:clamp(11px,2.8vw,14px)}
+ .spot{font-size:clamp(10px,2.7vw,13px)}
+}
+@media(min-width:601px) and (max-width:850px){
+ #dialogue{grid-template-columns:115px minmax(0,1fr);min-height:165px}
+ #portrait{width:115px;height:138px}
+}
+
+/* Phase 4 Category C: readable live captions and stronger badge/stamp celebration. */
+#speech{white-space:pre-wrap;overflow-wrap:anywhere}
+#dialogue.speaking .dialogue-box{box-shadow:0 0 0 3px #29323c,inset 0 0 0 3px #397096,0 0 0 5px #f0c46c55}
+#dialogue.speaking .nameplate::after{content:' ◖)))';color:#397052;font-size:13px;vertical-align:middle}
+#voiceStatus{display:inline-block;max-width:100%;overflow-wrap:anywhere}
+.celebrate .badge{filter:drop-shadow(0 4px 2px #af732a60);animation:badge-reveal .8s cubic-bezier(.15,1.55,.37,1) both}
+.celebrate .final-stamp{display:inline-block;max-width:90%;padding:6px 22px;border:6px double #b3312f;border-radius:5px;color:#b3312f;background:#fff4e0;font-size:clamp(24px,5vw,42px);letter-spacing:.08em;box-shadow:3px 4px #74352c20;transform-origin:center;animation:stamp-hit .38s .95s cubic-bezier(.1,.8,.4,1.25) both}
+@keyframes badge-reveal{0%{transform:scale(.2) rotate(-18deg);opacity:0}75%{transform:scale(1.13) rotate(6deg);opacity:1}100%{transform:scale(1) rotate(0)}}
+@keyframes stamp-hit{0%{transform:scale(2.1) rotate(-16deg);opacity:0;filter:blur(3px)}65%{transform:scale(.89) rotate(-8deg);opacity:1;filter:blur(0)}100%{transform:scale(1) rotate(-7deg);opacity:1}}
+@media(prefers-reduced-motion:reduce){.celebrate .badge,.celebrate .final-stamp{animation:none!important}}
+@media(max-width:600px){#dialogue.speaking .nameplate::after{font-size:11px}.celebrate .final-stamp{padding:5px 12px}}
+
+
+/* Phase 4 layout refinement: whole desktop player is 16:9. The 640×360 canvas itself keeps 16:9.
+   A small expandable dialogue stays at upper-left; controls and camera are outside the active canvas. */
+#gameShell{position:relative;display:grid;grid-template-columns:minmax(0,73%) minmax(0,27%);grid-template-rows:minmax(0,1fr) minmax(90px,25%);aspect-ratio:16/9;width:100%;max-width:1400px;margin:0 auto 16px;border:6px solid #3c624d;border-radius:16px;background:#163d32;overflow:hidden;box-shadow:0 10px 0 #9cb58f,0 14px 25px #193d2940;min-height:0}
+#playWorkspace,#playWorkspace.camera-active{display:block;grid-column:1;grid-row:1;min-width:0;min-height:0;padding:10px 8px 2px;overflow:hidden}
+#stage{aspect-ratio:16/9;width:100%;height:auto;min-width:0;margin:0;border-width:3px;box-shadow:none}
+#world{width:100%;height:100%;image-rendering:pixelated}
+#gameTasks{grid-column:2;grid-row:1/3;overflow:auto;overscroll-behavior:contain;min-height:0;min-width:0;padding:12px;background:#215348;border-left:4px solid #7b9e7b;scrollbar-width:thin;scrollbar-color:#b9d0a2 transparent}
+#gameTasks::before{content:'AKTIVITI MISI';display:block;margin:0 0 8px;color:#fff1bf;letter-spacing:.14em;font:bold 12px sans-serif}
+#gameTasks:has(#cameraPanel:not([hidden]))::before{content:'KAWALAN INTERAKTIF'}
+#gameTasks #activity{display:flex;flex-direction:column;gap:8px;align-items:stretch;margin:0;padding:0;color:#fdf2ce;max-width:none}
+#gameTasks #activity p{margin:4px 0 7px;line-height:1.35}
+#gameTasks #activity button{max-width:100%;width:100%;text-align:left;padding:7px 10px;font-size:clamp(12px,1.04vw,15px);line-height:1.3;min-height:38px;white-space:normal}
+#gameTasks #activity .response-panel{padding:10px;font-size:clamp(12px,1.04vw,15px)}
+#gameTasks #activity .response-panel h2,#gameTasks #activity .response-panel h3{font-size:clamp(14px,1.3vw,19px);margin:8px 0}
+#gameTasks #activity .response-panel textarea{min-height:70px;font-size:14px}
+#gameTasks #activity .final-diagrams{grid-template-columns:1fr}
+#gameTasks #activity .final-diagrams figcaption{font-size:12px;min-height:auto}
+#gameActions{grid-column:1;grid-row:2;min-height:0;overflow:auto;padding:10px 14px;background:#244c40;border-top:3px solid #71916d;scrollbar-width:thin}
+#gameActions #controls{display:flex;align-items:flex-start;gap:8px;flex-wrap:wrap;margin:0;padding:0}
+#gameActions #controls button{min-height:42px;padding:7px 12px;font-size:clamp(12px,1vw,15px);max-width:100%}
+#cameraPanel{width:100%;max-width:none;margin:0 0 12px;padding:9px;border-width:2px}
+#cameraViewport{width:100%;max-width:none}
+#cameraControls button{min-height:36px;padding:6px 4px;font-size:12px}
+#cameraStatus{font-size:12px;min-height:auto}
+.cameraPrivacy{font-size:11px}
+#dialogue{position:absolute;top:2%;left:1.5%;z-index:7;display:flex;align-items:flex-start;gap:7px;width:min(43%,465px);max-width:calc(100% - 18px);min-height:0;max-height:34%;margin:0;padding:5px;background:#214963ed;border:2px solid #f8e8c2;border-radius:8px;box-shadow:0 4px 0 #173d45b0;color:#fff5dc;overflow:hidden;transition:max-height .17s ease;pointer-events:auto}
+#dialogue #portrait{width:clamp(34px,4vw,58px);height:clamp(43px,5.1vw,70px);border-radius:5px;flex:0 0 auto;object-fit:contain}
+#dialogue .dialogue-box{background:transparent;color:inherit;border:0;padding:3px 0 0;box-shadow:none;min-height:0;line-height:1.3;flex:1;min-width:0;margin:0}
+#dialogue .nameplate{position:static;display:block;width:max-content;margin:0 0 4px;padding:0 6px;color:#4c3622;background:#fff0c7;border:1px solid #523d2c;border-radius:3px;font-size:clamp(11px,1vw,14px);letter-spacing:.06em}
+#dialogue #speech{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;max-height:3.1em;color:#fff7df;font-size:clamp(11px,1vw,14px);line-height:1.45;text-shadow:none;margin:0 0 4px}
+#dialogue .dialogue-actions{display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+#dialogue #listen{padding:3px 7px;font-size:11px;min-height:27px}
+#dialogue #voiceStatus{display:none;font-size:11px;color:#ffe3ae;margin:0}
+#dialogToggle{align-self:flex-start;border:1px solid #f1dcae;background:#244b5f;color:#fff6dc;box-shadow:none;border-radius:4px;padding:4px 6px;min-height:30px;font-size:10px;line-height:1.2;white-space:nowrap}
+#dialogue.expanded{max-height:77%;width:min(65%,620px);overflow:auto;background:#214963f5}
+#dialogue.expanded #speech{display:block;max-height:none;overflow:visible;font-size:clamp(12px,1.05vw,15px);-webkit-line-clamp:unset}
+#dialogue.expanded #voiceStatus{display:inline}
+#dialogue.expanded .dialogue-actions{gap:7px}
+#title{top:31%;left:5%;max-width:60%}
+#title h1{font-size:clamp(25px,4vw,57px)}
+#objective{left:auto;right:8px;bottom:8px;max-width:65%;text-align:right;z-index:2;font-size:clamp(10px,1.2vw,15px)}
+#assemblyBoard .parts-tray{top:33%;left:2%;z-index:6;max-width:96%}
+#assemblyBoard .parts-tray button{font-size:clamp(10px,1vw,14px);padding:5px 7px}
+#spots .spot{font-size:clamp(10px,1vw,15px);padding:5px 6px}
+#spots .part-hotspot{padding:1px}
+#gameTasks .response-panel select,#gameTasks .response-panel input{min-width:0}
+#gameTasks #cameraPanel[hidden]{display:none!important}
+@media (max-width:1100px) and (min-width:781px){
+ #gameShell{grid-template-columns:minmax(0,71%) minmax(0,29%);grid-template-rows:minmax(0,1fr) minmax(80px,29%)}
+ #gameTasks{padding:7px}
+ #gameTasks #activity button{font-size:12px;padding:6px}
+ #dialogue{width:min(47%,370px);max-height:39%}
+ #dialogue #portrait{width:38px;height:48px}
+ #gameActions{padding:7px}
+ #gameActions #controls button{min-height:36px;padding:5px 7px}
+ #cameraPanel{padding:6px}
+ #cameraControls{gap:5px}
+ #cameraControls button{font-size:11px}
+}
+/* A portrait phone cannot legibly fit an entire lesson into a fixed 16:9 height.
+   Keep the actual game viewport 16:9 and move activities and camera below it. */
+@media (max-width:780px){
+ #gameShell{display:flex;flex-direction:column;aspect-ratio:auto;max-width:100%;overflow:visible;border:3px solid #3c624d;border-radius:10px;margin-bottom:14px}
+ #playWorkspace,#playWorkspace.camera-active{display:block;order:0;padding:3px;overflow:visible;width:100%}
+ #stage{width:100%;height:auto;aspect-ratio:16/9;border:2px solid #6e957b;border-radius:5px;box-shadow:none;overflow:hidden}
+ #gameActions{order:1;border-top:2px solid #71916d;padding:8px;max-height:none;overflow:visible}
+ #gameTasks{order:2;border-left:0;border-top:2px solid #71916d;max-height:none;overflow:visible;width:100%;padding:10px}
+ #gameTasks #activity{display:flex;flex-direction:row;flex-wrap:wrap;align-items:stretch}
+ #gameTasks #activity button{width:auto;flex:1 1 150px;font-size:13px}
+ #gameTasks #activity .response-panel{width:100%}
+ #gameTasks #activity .final-diagrams{grid-template-columns:1fr 1fr}
+ #gameActions #controls{gap:7px}
+ #gameActions #controls button{font-size:13px;min-height:42px;padding:7px 10px}
+ #cameraPanel{width:100%;max-width:440px;margin:0 auto 12px}
+ #cameraViewport{max-width:390px}
+ #dialogue{max-height:42%;width:min(62%,310px);padding:3px;gap:4px;z-index:7}
+ #dialogue #portrait{width:29px;height:39px}
+ #dialogue .nameplate{font-size:10px;padding:0 4px}
+ #dialogue #speech{font-size:10px;line-height:1.2;max-height:2.6em;margin:0}
+ #dialogue #listen{font-size:9px;padding:2px 3px;min-height:23px}
+ #dialogToggle{font-size:9px;min-height:24px;padding:3px}
+ #dialogue.expanded{width:min(94%,430px);max-height:90%}
+ #dialogue.expanded #speech{font-size:12px;line-height:1.3}
+ #title{top:27%;left:4%;max-width:80%}
+ #title h1{font-size:clamp(22px,5vw,34px)}
+ #title p{font-size:10px;padding:4px 5px}
+ #objective{bottom:5px;right:4px;font-size:10px;max-width:66%;padding:4px 6px}
+ #spots .spot{font-size:clamp(9px,1.8vw,12px);padding:3px 4px;min-height:26px}
+ #assemblyBoard .parts-tray{top:30%;gap:4px}
+ #assemblyBoard .parts-tray button{font-size:10px;padding:4px}
+ #assemblyBoard .targets button{width:clamp(28px,7vw,54px);height:clamp(26px,7vw,50px);font-size:11px}
+}
+@media(max-width:440px){
+ #dialogue{width:72%;max-height:46%}
+ #dialogue #portrait{width:25px;height:34px}
+ #title{top:32%}
+ #title h1{font-size:clamp(20px,5.3vw,28px)}
+ #gameTasks #activity{flex-direction:column}
+ #gameTasks #activity button{width:100%;flex:auto;text-align:left}
+ #gameTasks #activity .final-diagrams{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion:reduce){#dialogue{transition:none}}
+
+
+/* Keep default dialogue compact so hot-spots at 28–32% height remain uncovered. */
+#dialogue:not(.expanded){max-height:23%;min-height:0}
+#dialogue:not(.expanded) #speech{-webkit-line-clamp:1;max-height:1.5em}
+#dialogue:not(.expanded) #listen{display:none}
+@media(max-width:780px){
+ #dialogue:not(.expanded){max-height:25%;width:min(65%,300px)}
+ #dialogue:not(.expanded) #portrait{width:25px;height:31px}
+ #dialogue:not(.expanded) .nameplate{margin:0 0 1px}
+}
+@media(max-width:440px){#dialogue:not(.expanded){width:min(69%,260px)}}
+
+/* Friendly guide in otherwise empty 16:9 mission sidebar. */
+#gameTasks #activity:empty{display:block}
+#gameTasks #activity:empty::before{content:'Teroka lokasi dan komponen pada peta. Dengar arahan Alya atau pilih butang misi di bahagian bawah.';display:block;padding:14px 12px;border:2px dashed #b8d5b0;border-radius:9px;color:#f8efd1;line-height:1.6;font-size:clamp(13px,1.1vw,16px);background:#183e38}
+
+
+/* Phase 4: self-selected Alya TTS language, installed voice and speed controls. */
+#voiceSettings{display:grid;grid-template-columns:1fr;gap:10px;border:2px solid #8aa88b;background:#f7f1d9;color:#2d4b38;border-radius:12px;padding:14px;margin:10px 0 16px;min-width:0}
+#voiceSettings legend{font-weight:800;padding:0 8px;font-size:clamp(16px,2vw,20px)}
+#voiceSettings label{display:flex;flex-direction:column;gap:5px;margin:0;min-width:0}
+#voiceSettings select{width:100%;max-width:100%;min-height:44px;text-overflow:ellipsis;font-size:clamp(14px,2.5vw,17px);background:#fff9ec}
+#voiceSettings #voiceRate{width:100%;cursor:pointer;accent-color:#477d63}
+#voiceSettings #voiceRateLabel{font-weight:800;font-size:15px}
+#voiceSettings #testVoice{justify-self:start;min-height:44px;background:#d2efca}
+#voicePreviewStatus{font-size:14px;line-height:1.5;color:#275944;min-height:24px;font-weight:700;overflow-wrap:anywhere;margin:3px 0}
+#voiceSettings .voiceHint{font-size:13px;color:#53634c;line-height:1.5;margin:0}
+@media(max-width:600px){#voiceSettings{padding:10px}#voiceSettings select{font-size:14px}#voiceSettings legend{font-size:15px}}
+
+
+/* Phase 4 UI bugfix: the old #objective used top AND bottom offsets simultaneously,
+   stretching a chocolate-coloured rectangle over nearly the entire game canvas.
+   It is now a normal mission summary in the sidebar, never an overlay on art. */
+#gameTasks #objective.mission-brief{
+  position:static!important;inset:auto!important;top:auto!important;bottom:auto!important;
+  left:auto!important;right:auto!important;display:block!important;
+  width:100%!important;max-width:100%!important;min-height:0!important;height:auto!important;
+  color:#1c4b3a;background:#e8f3db;border:2px solid #91b29a;border-radius:8px;
+  box-shadow:none;text-align:left;font:700 clamp(13px,1.1vw,16px)/1.48 "Trebuchet MS",Arial,sans-serif;
+  overflow-wrap:anywhere;word-break:normal;white-space:normal;
+  padding:10px 12px;margin:0 0 12px;pointer-events:auto!important;z-index:auto!important
+}
+#gameTasks #objective.mission-brief:empty{display:none!important}
+#gameTasks #activity:empty::before{margin-top:0}
+#gameTasks #activity button{overflow-wrap:anywhere}
+#gameTasks,#gameActions{scrollbar-gutter:stable}
+#gameTasks .response-panel{max-width:100%;min-width:0}
+#gameTasks input,#gameTasks select,#gameTasks textarea{box-sizing:border-box;max-width:100%}
+#gameShell button:focus-visible,#gameShell a:focus-visible{outline:3px solid #ffdb6d;outline-offset:2px}
+@media(max-width:780px){
+  #gameTasks #objective.mission-brief{font-size:14px;padding:10px 12px;margin-bottom:10px}
+  #gameTasks,#gameActions{scrollbar-gutter:auto}
+  #gameActions button{min-height:44px}
+  #gameTasks #activity button{min-height:44px}
+}
+@media(max-width:460px){
+  #gameTasks #objective.mission-brief{font-size:14px;line-height:1.5}
+  #gameActions{padding:9px}
+  #gameActions #controls{gap:9px}
+  #gameActions #controls button{flex:1 1 140px;font-size:13px;white-space:normal;overflow-wrap:anywhere}
+}
+
+
+/* Phase 4 assembly controls: keep draggable component tray clear of the upper-left
+   Alya bubble and A/B/C targets. The same validator works for pointer, touch and hand. */
+#stage:has(#assemblyBoard) #assemblyBoard .parts-tray{
+  top:25%!important;bottom:auto!important;left:3%!important;right:auto!important;
+  max-width:94%;display:flex;flex-wrap:wrap;gap:5px;z-index:6
+}
+#stage:has(#assemblyBoard) #assemblyBoard .parts-tray button{
+  min-height:35px;max-width:100%;white-space:normal;overflow-wrap:anywhere
+}
+@media(max-width:780px){
+  #stage:has(#assemblyBoard) #assemblyBoard .parts-tray{
+    top:auto!important;bottom:1%!important;left:1%!important;right:1%!important;
+    width:98%;max-width:98%;justify-content:space-evenly;gap:2px
+  }
+  #stage:has(#assemblyBoard) #assemblyBoard .parts-tray button{
+    min-height:28px;padding:3px 4px;flex:1 1 30%;font-size:clamp(9px,1.75vw,12px)
+  }
+}
+
+
+/* Phase 4B — scientific stage-by-stage guide beside the four 16:9 diagrams. */
+.science-guide{width:100%;min-width:0;background:#f6f4d8;color:#265046;border:2px solid #82a88b;border-radius:10px;padding:10px;line-height:1.45;box-shadow:0 3px #163f3540}
+.science-guide h3{font-size:clamp(14px,1.2vw,18px);margin:0 0 8px}
+.science-guide .science-dots{display:flex;gap:5px;flex-wrap:wrap;margin:0 0 8px}
+.science-guide [data-guide-dot]{display:inline-grid;place-items:center;width:27px;height:27px;border:2px solid #76a18e;border-radius:50%;font-weight:900;font-size:13px;color:#48705b;background:#e4ead1}
+.science-guide [data-guide-dot].active{background:#337966;border-color:#e5c77b;color:#fff7dd}
+.science-guide [data-active-stage]{background:white;border-left:5px solid #45907f;padding:8px 10px;border-radius:6px;min-height:85px}
+.science-guide [data-active-stage] strong{display:block;font-size:clamp(12px,1vw,16px)}
+.science-guide [data-active-stage] p{font-size:clamp(12px,1vw,15px);margin:5px 0 0!important}
+.science-guide .science-disclaimer{font-size:11px;line-height:1.4;margin:8px 0!important;color:#536f64}
+.science-guide .science-navigation{display:flex;gap:6px}
+#gameTasks #activity .science-navigation button{min-height:40px;width:50%;flex:1;font-size:clamp(11px,1vw,13px);text-align:center;padding:6px!important;white-space:normal}
+/* Phase 4E — interactive learning booklet and manual teacher rubric. */
+.mission-book{width:100%;max-width:950px;margin:auto}
+.mission-book h2{margin:0 0 10px}
+.book-tabs{display:flex;flex-wrap:wrap;gap:7px;margin:12px 0 16px}
+.book-tabs button{flex:1 1 170px;min-height:45px;background:#e5ebd5;font-weight:700}
+.book-tabs button.active{background:#386e5d;color:#fff6d9;border-color:#efc977;box-shadow:0 3px #204c40}
+.book-section-head{border-left:6px solid #5b9878;background:#eff5d9;padding:11px 14px;border-radius:7px;margin-bottom:12px}
+.book-section-head h3{margin:0 0 4px;font-size:clamp(17px,1.8vw,23px)}
+.book-section-head p{margin:0;font-size:14px}
+.knowledge-grid,.badge-grid,.rubric-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:12px 0 18px}
+.knowledge-card{border:3px solid #8db18c;background:#fcf6df;color:#2d5244;border-radius:12px;padding:13px;box-shadow:0 4px 0 #a4b58d;min-width:0}
+.knowledge-card header{display:flex;align-items:center;gap:9px;max-width:none;padding:0;margin:0 0 8px;background:transparent;color:#2c5e4c;font-size:clamp(15px,1.25vw,19px)}
+.knowledge-card header span{font-size:23px}
+.knowledge-card p{white-space:pre-wrap;line-height:1.55;overflow-wrap:anywhere;margin:0;font-size:14px}
+.badge-tile{border:3px dashed #bcc4a7;border-radius:10px;background:#eeeee1;text-align:center;padding:12px 10px;opacity:.83;color:#526352}
+.badge-tile.collected{opacity:1;background:#f9ecc5;border:3px solid #d4a55c;color:#745137}
+.badge-tile>span{font-size:32px;display:block}
+.badge-tile strong{display:block;font-size:15px}
+.badge-tile p{margin:5px 0}
+.badge-tile small{font-size:12px}
+.book-history{display:grid;gap:8px}
+.book-history article{border-left:5px solid #98ac8b;background:#f2f4e8;padding:10px 12px;border-radius:6px}
+.book-history small{display:block;color:#57705b;margin-top:3px;font-size:12px}
+.book-history p{white-space:pre-wrap;overflow-wrap:anywhere}
+.book-note{font-size:13px;line-height:1.55;color:#4c6557;padding:10px 12px;background:#eef2e5;border:1px solid #b2c3b0;border-radius:6px}
+.rubric-card{background:#f6f3de;border:2px solid #b3c49e;border-radius:10px;padding:12px;line-height:1.5}
+.rubric-card h4{font-size:16px;margin:0 0 8px}
+.rubric-card p{font-size:13px;margin:9px 0}
+#teacherRubric{padding:14px;background:#eaf2df;border:2px solid #99b49a;border-radius:12px}
+#teacherRubric label{display:grid;gap:7px;margin:12px 0;font-weight:600;line-height:1.35}
+#teacherRubric select,#teacherRubric textarea{width:100%;max-width:100%;border:2px solid #a1b6a3;border-radius:7px;padding:9px;min-height:44px;background:white;color:#244e3b;font:inherit}
+#teacherRubric textarea{min-height:95px}
+#teacherRubric button{min-height:44px;background:#ffe9a5}
+.book-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
+.book-actions button{flex:1 1 190px;min-height:44px;font-size:14px;padding:9px}
+.pbd-print-table{border-collapse:collapse;width:100%;margin:12px 0}
+.pbd-print-table td,.pbd-print-table th{border:1px solid #9cae9a;padding:8px;text-align:left;font-size:13px}
+.worksheet .answer-lines{height:100px;margin:12px 0;background:repeating-linear-gradient(to bottom,transparent 0 28px,#a8bbaa 29px,#a8bbaa 30px)}
+@media(max-width:650px){.knowledge-grid,.rubric-grid{grid-template-columns:1fr}.badge-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.book-tabs button{flex:1 1 130px}.science-guide [data-active-stage]{min-height:0}.book-actions button{flex:1 1 150px}}
+@media print{.book-tabs,.book-actions{display:none!important}.worksheet .answer-lines{height:110px}}
+
+
+/* Phase 4 remaining-category polish: device safe areas, accessible activity controls, print. */
+#gameShell,#gameTasks,#gameActions{min-width:0}
+#gameTasks .science-guide button,#gameTasks .book-actions button{touch-action:manipulation}
+#modalBody{overflow-wrap:anywhere}
+.book-history article,.knowledge-card,.rubric-card,.badge-tile{break-inside:avoid;page-break-inside:avoid}
+#gameTasks .science-guide .science-navigation{justify-content:space-between}
+#gameTasks .response-panel input:focus-visible,#gameTasks .response-panel textarea:focus-visible,#gameTasks .response-panel select:focus-visible,#teacherRubric :focus-visible{outline:3px solid #edb95f;outline-offset:2px}
+@media(max-width:780px){
+  body{padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px)}
+  #gameShell{max-width:100%}
+  #gameActions,#gameTasks{overflow-wrap:anywhere}
+  #gameTasks .science-guide{padding:12px}
+  #gameTasks .science-guide [data-active-stage]{min-height:60px}
+}
+@media(max-width:480px){
+  #gameTasks .knowledge-grid{grid-template-columns:1fr}
+  #gameTasks .response-panel{padding:10px}
+  #modalBody .book-tabs button{font-size:14px;padding:9px;flex-basis:115px}
+}
+@media print{
+ .worksheet{color:#141b15!important;background:#fff!important}
+ .worksheet h2,.worksheet h3{break-after:avoid}
+ .worksheet .answer-lines{break-inside:avoid}
+ .worksheet .answer-lines + h3{break-before:auto}
+ .worksheet p{orphans:2;widows:2}
+ .pbd-print-table{border:1px solid #444!important}
+ .pbd-print-table tr{break-inside:avoid}
+}
+
+
+/* Phase 4 final dialogue: full subtitles live in the activity rail, not across the play map. */
+#gameTasks #dialogueTranscript[hidden]{display:none!important}
+#gameTasks .dialogue-transcript{display:block;background:#fff5da;color:#204839;border:2px solid #87b09b;border-radius:10px;padding:12px;margin:0 0 12px;box-shadow:0 3px 0 #173b2a44;overflow-wrap:anywhere}
+#gameTasks .transcript-heading{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:0 0 9px}
+#gameTasks .transcript-heading strong{font-size:clamp(14px,1.15vw,18px)}
+#gameTasks #transcriptClose{min-width:38px;min-height:38px;font-size:19px;text-align:center}
+#gameTasks #transcriptText{white-space:pre-wrap;font-size:clamp(13px,1vw,16px);line-height:1.55;margin:0 0 10px}
+#gameTasks .transcript-actions{display:flex;flex-wrap:wrap;gap:7px}
+#gameTasks .transcript-actions button{flex:1 1 115px;min-height:42px;text-align:center!important}
+#gameTasks #transcriptStatus{font-size:12px;color:#346657;margin:9px 0 0;line-height:1.45}
+#voiceSettings #refreshVoices{min-height:40px;margin:0 0 8px}
+#voiceSettings #voicePitch{width:100%;accent-color:#477d63}
+.device-results{padding:10px 13px;border:2px solid #aac9a8;border-radius:8px;background:#eff5df;line-height:1.4}
+.device-results p{margin:7px 0}
+#checkCameraPermission,#backToSettings{min-height:44px;margin:7px 6px 7px 0}
+@media(max-width:780px){#gameTasks .dialogue-transcript{padding:13px}#gameTasks #transcriptText{font-size:15px}#gameTasks .transcript-actions button{min-height:44px}}
+@media print{#dialogueTranscript,.device-results,#deviceCheck{display:none!important}}
+
+
+/* Phase 4 A/D/E: cohesive pixel station panels and usable device / teacher workflow. */
+.lesson-checklist{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:12px 0 20px}
+.lesson-checklist article{background:#f9f5de;border:2px solid #a9c39a;border-radius:10px;padding:11px;display:grid;grid-template-columns:26px 1fr;gap:4px 7px;min-width:0}
+.lesson-checklist article span{font-size:22px;color:#3d8266;line-height:1.2}
+.lesson-checklist article strong{font-size:14px;line-height:1.4;color:#285847}
+.lesson-checklist article small{grid-column:2;color:#496d59;margin:0;font-size:12px;line-height:1.4}
+.lesson-timeline{display:grid;gap:8px;margin:12px 0}
+.lesson-timeline article{padding:12px 14px;border-left:5px solid #72a887;background:#f5f4e4;border-radius:8px}
+.lesson-timeline article strong{font-size:14px;color:#2a634f}
+.lesson-timeline article p{margin:5px 0 0;font-size:13px;line-height:1.45}
+.book-glossary{margin:18px 0;background:#f1f4e6;border:2px solid #b3cba9;border-radius:12px;padding:12px}
+.book-glossary summary{font-weight:800;font-size:15px;cursor:pointer;padding:6px;outline-offset:4px}
+.book-glossary summary:focus-visible{outline:3px solid #e1b464}
+.book-glossary .knowledge-grid{margin-top:12px}
+#modalBody .mission-book{max-width:900px}
+#modalBody .book-tabs button:focus-visible,#modalBody .book-actions button:focus-visible{outline:3px solid #b68a33;outline-offset:2px}
+#gameShell{isolation:isolate}
+#gameTasks .response-panel,#gameTasks .science-guide,#gameTasks .mission-brief{max-width:100%}
+#gameTasks #activity .science-guide button{min-height:44px}
+#gameActions #controls button,#gameTasks button{touch-action:manipulation}
+#stage .spot{outline-offset:2px}
+#stage .spot:focus-visible{outline:3px solid #fbe37e}
+@media(min-width:781px) and (max-height:630px){
+ #gameShell{margin-bottom:8px}
+ #gameTasks{padding:7px}
+ #gameTasks #objective.mission-brief{padding:7px 9px;font-size:12px}
+ #gameTasks #activity button{min-height:35px}
+ #gameActions{padding:6px 8px}
+ #gameActions #controls button{min-height:36px}
+}
+@media(max-width:780px){
+ #gameTasks{scroll-margin-top:12px}
+ #gameActions #controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+ #gameActions #controls button{width:100%;min-height:44px}
+ #gameTasks #activity .science-guide{width:100%}
+ .lesson-checklist{grid-template-columns:1fr}
+}
+@media(max-width:390px){
+ #gameActions #controls{grid-template-columns:1fr}
+ #dialogue:not(.expanded){max-height:23%}
+ #gameTasks .mission-brief{font-size:13px}
+}
+@media print{
+ .lesson-checklist,.lesson-timeline{display:block}
+ .lesson-timeline article,.lesson-checklist article{break-inside:avoid;page-break-inside:avoid}
+ .book-glossary{break-inside:avoid}
+ #printContent{font-family:Arial,sans-serif!important;font-size:11pt!important;line-height:1.45!important}
+}

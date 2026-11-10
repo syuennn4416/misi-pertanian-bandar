@@ -23,3 +23,66 @@ export function drawScience(canvas,type,time,installed=['level','inlet','capilla
  text('Ruang partikel kapilari',249,231);text('Air → bahan kapilari → medium → akar',170,344);
  }
 }
+
+
+/* Educational animations: four distinct systems, synchronised with a readable guide.
+   These symbols illustrate the direction of water/nutrient movement; they are not to scale. */
+export const learningStages=[
+ [
+  ['Larutan statik','Larutan nutrien statik disimpan dalam takungan, tanpa pam untuk mengitar larutan.'],
+  ['Akar menyerap','Akar yang bersentuhan dengan larutan mengambil air dan nutrien.'],
+  ['Tiada aliran kembali','Tiada salur air keluar untuk mengitar larutan. Pantau aras dan keadaan larutan.']
+ ],
+ [
+  ['Pam mengalirkan larutan','Pam menolak larutan dari tangki nutrien ke palung tanaman.'],
+  ['Akar mendapat nutrien','Akar tanaman bersentuhan dengan larutan di dalam palung.'],
+  ['Larutan kembali','Larutan mengalir melalui salur keluar ke tangki untuk dikitar semula.']
+ ],
+ [
+  ['Bahan buangan ikan','Ikan menghasilkan bahan buangan yang menyumbang ammonia kepada air.'],
+  ['Mikroorganisma nitrifikasi','Mikroorganisma bermanfaat menukarkan ammonia kepada nitrit, kemudian nitrat.'],
+  ['Akar menyerap nitrat','Tanaman menggunakan nitrat sebagai nutrien; air kemudian kembali ke tangki ikan.']
+ ],
+ [
+  ['Takungan air','Air disimpan di ruang air di bawah medium tanaman.'],
+  ['Sentuhan bahan kapilari','Bahagian bawah bahan kapilari mesti menyentuh air dalam takungan.'],
+  ['Air naik ke medium','Tindakan kapilari mengalirkan air melalui bahan penyerap ke medium.'],
+  ['Akar menyerap air','Akar menyerap air daripada medium tanpa memerlukan pam.']
+ ]
+];
+export function stageIndex(system,time){
+ const steps=learningStages[system]||[];
+ return steps.length?Math.floor(Math.max(0,Number.isFinite(time)?time:0)/3)%steps.length:0;
+}
+export function drawFlowOverlay(canvas,system,time){
+ const c=canvas.getContext('2d'),step=stageIndex(system,time);
+ const dot=(x,y,colour,size=7)=>{c.fillStyle='#194744';c.fillRect(Math.round(x)-1,Math.round(y)-1,size+2,size+2);c.fillStyle=colour;c.fillRect(Math.round(x),Math.round(y),size,size)};
+ const moving=(points,colour,speed=55,count=10)=>{
+  const lens=points.slice(1).map((p,i)=>Math.hypot(p[0]-points[i][0],p[1]-points[i][1]));
+  const total=lens.reduce((a,b)=>a+b,0);if(!total)return;
+  for(let n=0;n<count;n++){let d=((Math.max(0,time)*speed+n*total/count)%total+total)%total;
+   for(let i=0;i<lens.length;i++){if(d<=lens[i]){const u=lens[i]?d/lens[i]:0;dot(points[i][0]+(points[i+1][0]-points[i][0])*u,points[i][1]+(points[i+1][1]-points[i][1])*u,colour,4);break}d-=lens[i]}}
+ };
+ if(system===0){
+  // Static deep-water culture: particles stay in the reservoir; uptake goes into roots, not round a loop.
+  for(let n=0;n<8;n++)dot(170+n*41,253+Math.sin(time*.7+n)*3,'#ecf9b0',3);
+  if(step===1){for(let x of [210,320,430])moving([[x,250],[x,210],[x,181]],'#e9fb9a',22,3)}
+ }else if(system===1){
+  // Circulating deep-water culture, exactly follows the existing pump–inlet–trough–return route.
+  moving([[250,286],[119,286],[119,127],[166,127],[174,160],[486,160],[486,264],[450,264],[250,286]],'#ffe48c',50,13);
+ }else if(system===2){
+  // Aquaponics: distinguish waste -> nitrification -> root uptake, without suggesting plants eat ammonia.
+  if(step===0)moving([[265,260],[194,260],[180,188],[130,188]],'#f2b861',35,8);
+  if(step===1){
+   for(let n=0;n<5;n++){dot(126+n*13,164+Math.sin(time*2+n)*6,n%2?'#f7de88':'#95dd87',5)}
+  }
+  if(step===2)moving([[190,115],[250,115],[350,112],[455,112]],'#a5e58d',45,8);
+ }else if(system===3){
+  // Self-watering system: reservoir -> wick -> medium -> roots, NO pump or return circulation.
+  moving([[320,280],[320,247],[320,215],[320,185],[320,150]],'#f5ffad',25,7);
+ }
+ // Small stage counter on the upper right; the full explanation stays in the separate task rail.
+ const label=(step+1)+'/'+learningStages[system].length;
+ c.fillStyle='#173d34d9';c.fillRect(557,12,69,27);
+ c.fillStyle='#f9f1c7';c.font='bold 15px sans-serif';c.fillText(label,573,30);
+}
