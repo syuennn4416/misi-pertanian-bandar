@@ -1,7 +1,7 @@
 import {createPhase3} from './phase3.js';
 import {repairCases} from './phase3-content.js';
 import {renderer} from './art.js';
-import {definition,places,systems,pbdChecklist,pbdRubric} from './content.js';
+import {definition,places,systems,pbdChecklist,pbdRubric,vocabulary,lessonTimeline} from './content.js';
 import {freshProgress,loadProfiles,normalizeProgress,badgeNames} from './progress.js';
 import {drawScience,assemblyParts,learningStages,stageIndex,drawFlowOverlay} from './science.js';
 import {mountAssembly} from './assembly.js';
@@ -59,12 +59,17 @@ function answerForm(id,prompt,done){const previous=state.answers.filter(a=>a.id=
 function award(n,next){if(review)return;if(n===4&&!state.cases.every(c=>c.repaired&&c.explained))return;if(n===5&&state.finalDone.length!==3)return;const missing=Array.from({length:n-1},(_,i)=>i+1).filter(id=>!state.badges.includes(id));if(missing.length){if(state.mode==='kelas'){modal('<h2>Pratonton Kelas — Belum Tamat</h2><p>Aktiviti ini telah ditunjukkan, tetapi Misi '+missing.join(', ')+' belum dilengkapkan. Tiada lencana baharu diberikan dan kemajuan akhir tidak diubah.</p><button id="previewReturn">Kembali ke Senarai Misi</button>');$('#previewReturn').onclick=()=>{$('#modal').close();missionMenu()}}else toast('Selesaikan misi sebelumnya dahulu.');return;}if(!state.badges.includes(n)){state.badges.push(n);state.stamps.push({mission:n,time:Date.now()})}if(n===5&&[1,2,3,4,5].every(id=>state.badges.includes(id)))state.completedAt??=Date.now();state.scene=next;save();say(n===4?'Syabas! Kamu berjaya mengenal pasti punca masalah dan memulihkan kedua-dua sistem penanaman!':'Tahniah! Kamu memperoleh lencana '+badgeNames[n-1]+'. Catatan kamu disimpan untuk semakan guru.','congrats-'+n);modal(`<div class="celebrate"><h2>Tahniah, peneroka!</h2><canvas id="stampAlya" width="80" height="96"></canvas><div class="badge">✦</div><h3>${badgeNames[n-1]}</h3><p>${state.badges.length}/5 lencana terkumpul</p><div class="stamp final-stamp">SELESAI!</div><button id="nextMission">${n===1?'Terokai Pusat Teknologi':n===2?'Masuk Makmal Tani Pintar':n===3?'Lihat Pintu Misi 4':n===4?'Masuk Balai Bandar Hijau':'Tamat Permainan'}</button></div>`);sound.effect('reward');setTimeout(()=>{if($('#stampAlya'))sound.effect('stamp')},950);$('#nextMission').onclick=()=>{$('#modal').close();go(next)}}
 function answer2(){if(review){toast('Mod ulang kaji tidak memberikan lencana. Sambung permainan untuk merekod kemajuan.');return}if(state.mode==='kelas'){modal('<h2>Perbincangan Kelas — Dua Sistem</h2><p>Guru: tunjukkan dua sistem, minta murid berbincang dan catat jawapan masing-masing pada Lembaran Respons Individu. Rekod ini bukan jawapan individu semua murid.</p><label>Catatan guru (pilihan)<textarea id="classSystemNote"></textarea></label><button id="confirmClassSystems">Perbincangan Selesai</button>');$('#confirmClassSystems').onclick=()=>{const id='misi2';state.answers.push({id,text:$('#classSystemNote').value.trim(),kind:'class_activity',individualAnswersCollected:false,time:Date.now(),mode:'kelas',attempt:state.answers.filter(a=>a.id===id).length+1});save();$('#modal').close();award(2,'workshop')};return}if(systems.some((s,i)=>state.inspected[i].length<s.parts.length)){toast('Periksa semua komponen di keempat-empat stesen dahulu.');return}modal('<h2>Jelaskan dua sistem</h2><p>Pilih dua sistem yang berbeza. Terangkan urutan pergerakan air serta fungsi komponen.</p>'+[0,1].map(n=>`<label>Sistem ${n+1}<select id="systemChoice${n}">${systems.map((s,i)=>`<option value="${i}" ${i===n?'selected':''}>${s.name}</option>`).join('')}</select></label><label>Penerangan ${n+1}<textarea id="explanation${n}"></textarea></label>`).join('')+'<p id="systemError" role="alert"></p><button id="saveSystems">Simpan Penerangan</button>');const draft=state.drafts.misi2;for(let n=0;n<2;n++){if(draft){$('#systemChoice'+n).value=draft.choices[n];$('#explanation'+n).value=draft.texts[n]}for(const id of ['systemChoice','explanation'])$('#'+id+n).oninput=()=>{state.drafts.misi2={choices:[0,1].map(i=>$('#systemChoice'+i).value),texts:[0,1].map(i=>$('#explanation'+i).value)};save()}}let submitted=false;$('#saveSystems').onclick=()=>{if(submitted)return;const choices=[0,1].map(n=>Number($('#systemChoice'+n).value)),texts=[0,1].map(n=>$('#explanation'+n).value.trim());if(choices[0]===choices[1]||texts.some(t=>!t)){$('#systemError').textContent='Pilih dua sistem berbeza dan lengkapkan kedua-dua penerangan.';return}submitted=true;delete state.drafts.misi2;state.answers.push({id:'misi2',text:choices.map((c,i)=>systems[c].name+': '+texts[i]).join('\n'),systems:choices,time:Date.now(),mode:state.mode,attempt:state.answers.filter(a=>a.id==='misi2').length+1});award(2,'workshop')}}
 function compare(){modal(`<h2>Bandingkan Sistem</h2><div class="compare">${systems.map((s,i)=>`<article><h3>${s.name}</h3><p>${s.text}</p><p>${i===1||i===2?'Pam mengalirkan air dalam kitaran.':i===3?'Air naik melalui tindakan kapilari, tanpa pam.':'Larutan statik, tanpa pam kitaran.'}</p><button data-system="${i}">Lihat Animasi</button></article>`).join('')}</div><p>Bandingkan khususnya kultur air: tanpa kitaran menyimpan larutan statik, manakala dengan kitaran menggunakan pam dan salur kembali. Akuaponik melibatkan ikan dan mikroorganisma; bekas pengairan kendiri menggunakan tindakan kapilari.</p>`);document.querySelectorAll('[data-system]').forEach(b=>b.onclick=()=>{$('#modal').close();go('sim'+b.dataset.system)})}
+function downloadCsv(rows,filename,quote){
+ const content='\uFEFF'+rows.map(row=>row.map(quote).join(',')).join('\r\n');
+ const url=URL.createObjectURL(new Blob([content],{type:'text/csv;charset=utf-8;'}));
+ const a=document.createElement('a');a.href=url;a.download=filename;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1200);
+}
 function downloadBackup(payload,filename){
  const url=URL.createObjectURL(new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}));
  const a=document.createElement('a');a.href=url;a.download=filename;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1200);
 }
 function book(){
- modal('<section class="mission-book"><h2>Buku Misi Pertanian</h2><p>Nota interaktif, rekod kemajuan dan instrumen guru untuk SP 7.1.1 dan SP 7.1.2.</p><div class="book-tabs" role="group" aria-label="Bahagian Buku Misi"><button type="button" data-book-tab="nota">Kad Ilmu</button><button type="button" data-book-tab="lencana">Lencana & Rekod</button><button type="button" data-book-tab="pbd">Rubrik PBD</button></div><div id="bookPages"></div><div class="book-actions"><button id="viewCard">Kad Pemilihan Sistem Penanaman</button><button id="viewReport">Laporan Pembelajaran</button><button id="viewWorksheet">Lembaran Respons Individu</button><button id="export">Eksport Rekod JSON</button><button id="backup">Sandaran Kedua-dua Mod</button><button id="importBackup">Import Sandaran</button><input id="backupFile" type="file" accept=".json,application/json" hidden><button id="replay">Ulang Kaji Animasi</button></div></section>');
+ modal('<section class="mission-book"><h2>Buku Misi Pertanian</h2><p>Nota interaktif, rekod kemajuan dan instrumen guru untuk SP 7.1.1 dan SP 7.1.2.</p><div class="book-tabs" role="group" aria-label="Bahagian Buku Misi"><button type="button" data-book-tab="nota">Kad Ilmu</button><button type="button" data-book-tab="lencana">Lencana & Rekod</button><button type="button" data-book-tab="pbd">Rubrik PBD</button><button type="button" data-book-tab="panduan">Panduan PdP</button></div><div id="bookPages"></div><div class="book-actions"><button id="viewCard">Kad Pemilihan Sistem Penanaman</button><button id="viewReport">Laporan Pembelajaran</button><button id="viewWorksheet">Lembaran Respons Individu</button><button id="exportPBD">Eksport PBD CSV</button><button id="export">Eksport Rekod JSON</button><button id="backup">Sandaran Kedua-dua Mod</button><button id="importBackup">Import Sandaran</button><input id="backupFile" type="file" accept=".json,application/json" hidden><button id="replay">Ulang Kaji Animasi</button></div></section>');
  const pages=$('#bookPages'), card=(name,body,icon='🌱')=>'<article class="knowledge-card"><header><span aria-hidden="true">'+icon+'</span><strong>'+esc(name)+'</strong></header><p>'+esc(body)+'</p></article>';
  const opened=state.notes;
  function notes(){
@@ -85,6 +90,18 @@ function book(){
   const saved=state.answers.slice().sort((a,b)=>b.time-a.time);
   pages.innerHTML='<div class="book-section-head"><h3>Pasport Peneroka</h3><p>'+state.badges.length+'/5 lencana · '+saved.length+' catatan · '+state.hints.length+' petunjuk</p></div><div class="badge-grid">'+tiles+'</div><h3>Jejak Pembelajaran</h3><div class="book-history">'+(saved.map(a=>'<article><strong>'+esc(a.id)+' · Cubaan '+esc(a.attempt)+'</strong><small>'+new Date(a.time).toLocaleString('ms-MY')+'</small><p>'+esc(a.text||'Aktiviti perbincangan kelas — jawapan individu tidak dikumpul.')+'</p></article>').join('')||'<p>Belum ada catatan disimpan.</p>')+'</div><p class="book-note">Lencana ialah rekod penyelesaian aktiviti, bukan bukti automatik penguasaan DSKP.</p>';
  }
+ function guide(){
+ const SP1=state.answers.some(a=>a.id==='misi1'||a.id==='akhir0'),SP2=state.answers.some(a=>a.id==='misi2'||a.id==='akhir1');
+ const count=places.reduce((n,p)=>n+p.items.filter((_,i)=>state.visited.includes(p.id+i)).length,0);
+ const seen=state.inspected.reduce((n,items)=>n+items.length,0);
+ const observed=[
+  ['SP 7.1.1: Menerangkan maksud pertanian bandar',SP1,'Jawapan maksud dan contoh perlu disemak oleh guru.'],
+  ['SP 7.1.2: Menjelaskan sistem takungan',SP2,'Penerangan dua sistem perlu disemak oleh guru.'],
+  ['Penerokaan contoh pertanian bandar',count===6,'Objek diperiksa: '+count+'/6.'],
+  ['Penerokaan komponen sistem takungan',seen>=8,'Komponen diperiksa: '+seen+'/'+systems.reduce((n,x)=>n+x.parts.length,0)+'.']
+ ];
+ pages.innerHTML='<div class="book-section-head"><h3>Panduan PdP · 60 Minit</h3><p>Fokus SP 7.1.1 & SP 7.1.2. Senarai ini menunjukkan aktiviti direkod, bukan TP automatik.</p></div><div class="lesson-checklist">'+observed.map(([name,yes,detail])=>'<article><span aria-hidden="true">'+(yes?'✓':'○')+'</span><strong>'+esc(name)+'</strong><small>'+esc(detail)+'</small></article>').join('')+'</div><h3>Cadangan Pengurusan Masa</h3><div class="lesson-timeline">'+lessonTimeline.map(([name,min,notes])=>'<article><strong>'+esc(name)+' · '+min+' minit</strong><p>'+esc(notes)+'</p></article>').join('')+'</div><details class="book-glossary"><summary>Glosari Istilah Pertanian (klik untuk buka)</summary><div class="knowledge-grid">'+vocabulary.map(([term,desc])=>card(term,desc,'📖')).join('')+'</div></details><p class="book-note">Rujukan: DSKP KSSR RBT Tahun 5 (Semakan 2017), Standard Pembelajaran 7.1.1 & 7.1.2; Buku Teks RBT Tahun 5, Unit 7 Pertanian Bandar.</p>';
+ }
  function rubric(){
   const rubricTable='<div class="rubric-grid">'+pbdRubric.map(item=>'<article class="rubric-card"><h4>SP '+esc(item.sp)+' — '+esc(item.title)+'</h4>'+item.levels.map((desc,i)=>'<p><b>Skor '+(i+1)+'</b> · '+esc(desc)+'</p>').join('')+'</article>').join('')+'</div>';
   const assessment=state.mode==='kelas'
@@ -102,12 +119,20 @@ function book(){
    $('#rubricStatus').textContent='Penilaian manual disimpan. Ini bukan pengiraan TP automatik.';
   };
  }
- const sections={nota:notes,lencana:badges,pbd:rubric};
+ const sections={nota:notes,lencana:badges,pbd:rubric,panduan:guide};
  const setTab=id=>{pages.replaceChildren();sections[id]();document.querySelectorAll('[data-book-tab]').forEach(b=>{const active=b.dataset.bookTab===id;b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active))})};
  document.querySelectorAll('[data-book-tab]').forEach(b=>b.onclick=()=>setTab(b.dataset.bookTab));
  setTab('nota');
  $('#viewCard').onclick=phase3.card;$('#viewCard').disabled=!state.cards.length;
  $('#viewReport').onclick=phase3.report;$('#viewWorksheet').onclick=phase3.worksheet;
+ $('#exportPBD').onclick=()=>{
+  if(state.mode==='kelas'){toast('Mod Kelas bukan rekod individu. Sila gunakan lembaran jawapan murid.');return}
+  const quote=value=>'"'+String(value??'').replaceAll('"','""').replace(/[\\r\\n]+/g,' ').replace(/^[=+@\\-]/,'\u2019$('#viewReport').onclick=phase3.report;$('#viewWorksheet').onclick=phase3.worksheet;')+'"';
+  const row=[state.pbd.studentName||'',state.pbd.assessedAt?new Date(state.pbd.assessedAt).toISOString():'',state.pbd.scores['7.1.1']??'',state.pbd.scores['7.1.2']??'',...state.pbd.checks,state.pbd.comment];
+  const header=['Nama Murid','Tarikh Penilaian','Skor 7.1.1 (1-3)','Skor 7.1.2 (1-3)',...pbdChecklist.map((_,i)=>'Semakan '+(i+1)),'Catatan Guru'];
+  downloadCsv([header,row],'ringkasan-pbd-misi-pertanian.csv',quote);
+ };
+
  $('#export').onclick=()=>downloadBackup(state,'rekod-misi-pertanian-'+state.mode+'.json');
  $('#backup').onclick=()=>downloadBackup({product:'misi-pertanian-bandar',format:1,exportedAt:new Date().toISOString(),mode:state.mode,profiles},'sandaran-misi-pertanian-kedua-dua-mod.json');
  $('#importBackup').onclick=()=>$('#backupFile').click();
